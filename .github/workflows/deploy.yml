@@ -38,6 +38,7 @@ jobs:
             **/.git*
             **/.git*/**
             **/node_modules/**
+            **/vendor/**
             .env
             public/media/**
             storage/app/public/**
