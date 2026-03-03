@@ -6,21 +6,35 @@
 
 $colors: (
     white: #FFFFFF,
+    50-sand-matte: #f7f4f2,
     black: #000000,
     dark: #212931,
     gray: #878683,
     gray-light: #F5F5F5,
     gray-medium: #D9D9D9,
     line: #EEE6CF,
-    primary: #134038,
+    primary: #1B594F,
     primary-light: #6091CB,
     secondary: #14855F,
     secondary-medium: #1B594F,
     secondary-large: #193632,
     border: #E3E3E3,
+    gold-lighter: #D9B48D,
     gold: #CEAE87,
+    gold-heavy: #AF8546,
     red: #FF2F2F,
     green: #107c10,
+    emerald-950: #0B2622,
+    emerald-900: #134038,
+    emerald-800: #1B594F,
+    emerald-700: #148572,
+    emerald-600: #08A389,
+    emerald-500: #00BFBF,
+    emerald-400: #6CD9D9,
+    emerald-300: #80FFFF,
+    emerald-200: #B2FFFF,
+    emerald-100: #D9FFFF,
+    emerald-50: #F5FCFC,
 );
 
 :root {
@@ -29,9 +43,9 @@ $colors: (
     }
 
     --font-primary: "Nice-Variable",
-    monospace;
-    --font-secondary: "Pangea-Variable",
     sans-serif;
+    --font-secondary: "Pangea-Variable",
+    serif;
 
     --font-primary-settings: 'opsz' 6,
     'MONO' 1;
@@ -42,6 +56,13 @@ $colors: (
     'opsz' 50;
 
     --base-line-height: 1.6;
+    --font-weight-xlight: 200;
+    --font-weight-light: 300;
+    --font-weight-regular: 400;
+    --font-weight-medium: 500;
+    --font-weight-semibold: 600;
+    --font-weight-bold: 700;
+    --font-weight-black: 900;
 
     --width-min: #{base.$width-min + px};
     --width-max: #{base.$width-max + px};

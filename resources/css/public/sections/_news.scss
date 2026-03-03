@@ -80,8 +80,9 @@
     overflow: hidden;
     position: relative;
     transition: var(--transition);
-    transition-property: color, background-color;
-    background-color: #F7F4F2;
+    transition-property: color, background-color, border-color;
+    background-color: var(--color-50-sand-matte);
+    border: 1px solid transparent;
 
     &::after {
         display: block;
@@ -192,14 +193,14 @@
         }
 
         &::before {
-            background-color: var(--color-secondary-medium);
+            display: none;
         }
 
         &::after {
             z-index: 2;
             background: var(--line-gradient);
-            opacity: 0;
-            visibility: hidden;
+            opacity: 1;
+            visibility: visible;
         }
     }
 
@@ -258,13 +259,14 @@
         left: 0;
     }
 
-    &:hover {
+    /*&:hover {
         color: var(--color-white);
-        background-color: #f2f2f7;
+        background-color: var(--color-emerald-800);
+        border-color: var(--color-emerald-800);
 
         .article-card {
             &-icon {
-                opacity: .3;
+                opacity: .1;
             }
 
             &-title {
@@ -278,16 +280,6 @@
 
             &-description {
                 color: var(--color-dark);
-
-                &::before {
-                    opacity: 0;
-                    visibility: hidden;
-                }
-
-                &::after {
-                    opacity: 1;
-                    visibility: visible;
-                }
             }
 
             &-info {
@@ -300,7 +292,42 @@
                         background-color: var(--color-dark);
                     }
                 }
-            }
+            }*/
+        
+        &:hover {
+            color: var(--color-white);
+            background-color: var(--color-emerald-800);
+            //border-color: var(--color-emerald-800);
+    
+            .article-card {
+                &-icon {
+                    opacity: .1;
+                }
+    
+                &-title {
+                    color: var(--color-white);
+    
+                    &::after {
+                        background-color: var(--color-white);
+                        rotate: 45deg;
+                    }
+                }
+    
+                &-description {
+                    color: var(--color-white);
+                }
+    
+                &-info {
+                    color: var(--color-white);
+    
+                    time {
+                        opacity: 1;
+    
+                        &::after {
+                            background-color: var(--color-white);
+                        }
+                    }
+                }
         }
     }
 }

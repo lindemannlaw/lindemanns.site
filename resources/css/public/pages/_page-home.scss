@@ -35,7 +35,7 @@
 
     h1 {
         font-size: range.build(44, 68, px, 375, 992);
-        font-weight: normal;
+        font-weight: 500;
         text-transform: uppercase;
         letter-spacing: -0.02em;
 
@@ -62,7 +62,11 @@
     }
 
     h2 {
-        font-size: range.build(20, 36);
+        font-family: var(--font-primary);
+        font-weight: var(--font-weight-xlight);
+        font-size: range.build(18, 32);
+        font-variation-settings: 'opsz' 6,
+    'MONO' 1;
     }
 }
 
