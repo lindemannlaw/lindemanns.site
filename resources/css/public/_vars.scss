@@ -64,6 +64,10 @@ $colors: (
     --font-weight-bold: 700;
     --font-weight-black: 900;
 
+    --font-color-primary-hover: var(--color-emerald-800);
+    --font-color-primary: var(--color-emerald-900);
+    --font-color-primary-dark: var(--color-emerald-950);
+
     --width-min: #{base.$width-min + px};
     --width-max: #{base.$width-max + px};
     --width-full: 100%;

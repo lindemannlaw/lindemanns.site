@@ -165,7 +165,7 @@
         width: range.build(50, 100);
         aspect-ratio: 1;
         border-radius: 50%;
-        background-color: var(--color-secondary);
+        background-color: var(--font-color-primary);
         text-decoration: none;
         color: var(--color-gold);
         position: absolute;
@@ -220,8 +220,8 @@
 
             &-tags {
                 p {
-                    background-color: var(--color-secondary-medium);
-                    border-color: var(--color-secondary-medium);
+                    background-color: var(--font-color-primary);
+                    border-color: var(--font-color-primary);
                 }
             }
 
@@ -305,7 +305,7 @@
     &:hover {
         .project-simple-card {
             &-title {
-                color: var(--color-secondary-medium);
+                color: var(--font-color-primary-lighter);
             }
         }
     }

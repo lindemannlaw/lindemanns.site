@@ -53,6 +53,7 @@
     font-size: range.build(34, 50);
     line-height: 1.5;
     letter-spacing: -0.01em;
+    color: var(--color-white);
 
     @media (min-width: 992px) {
         font-size: 60px;
@@ -99,6 +100,7 @@
         text-decoration: none;
         font-size: 1.5em;
         line-height: 1em;
+        
 
         @media (min-width: 992px) {
             font-size: .875em;

@@ -292,10 +292,11 @@
         transition-property: background-color;
         border-radius: 3em;
 
+        /*safety copy 
         &:hover,
         &.is-active {
             background-color: rgba(var(--color-black-rgb), .15);
-        }
+        }*/
 
         @media (max-width: 1439px) {
             padding: .25em 1em;
