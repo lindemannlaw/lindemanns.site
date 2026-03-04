@@ -173,7 +173,7 @@
 
 .project-description {
     --project-grid-width: 1440px;
-    --project-text-block-percent: 100;
+    --project-text-block-percent: 60;
     --project-details-gap: 64px;
     --project-content-width: calc(var(--project-grid-width) - var(--project-details-gap));
     --project-text-max-width: calc((var(--project-content-width) * var(--project-text-block-percent)) / 100);
