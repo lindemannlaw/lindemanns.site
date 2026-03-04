@@ -7,7 +7,7 @@
     color: var(--color-white);
     background-color: var(--color-primary-brand-900-darker-silent);
     padding: calc(var(--header-height) + 20px) 0 0;
-    border-radius: 0 0 var(--radius-sm) var(--radius-sm);
+    //border-radius: 0 0 var(--radius-sm) var(--radius-sm);
     position: relative;
     overflow: hidden;
 }
@@ -116,8 +116,48 @@
 }
 
 .news-article-description {
+    --news-details-line-length: 100px;
+    --news-details-gap: #{range.build(24, 40, px, 768, 992)};
+
     font-size: range.build(16, 18);
-    width: 100%;
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: range.build(24, 32, px, 375, 768);
+    align-items: start;
+    position: relative;
+
+    > .news-article-meta,
+    > .news-article-content-body {
+        padding-top: 1em;
+        position: relative;
+        margin-top: 0; /* formatted-text fügt margin-top hinzu – hier überschreiben für Linien-Alignment */
+
+        &::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: var(--news-details-line-length);
+            height: 1.5px;
+            background-color: var(--color-primary-brand-800-dark);
+        }
+    }
+
+    @media (min-width: 768px) {
+        grid-template-columns: 34fr 66fr;
+        gap: var(--news-details-gap);
+
+        > .news-article-meta,
+        > .news-article-content-body {
+            padding-top: 1.5em;
+        }
+
+        > .news-article-meta {
+            display: flex;
+            flex-direction: column;
+            gap: 1em;
+        }
+    }
 
     h2,
     h3,
@@ -129,8 +169,34 @@
         color: var(--color-font-primary);
     }
 
-    @media (min-width: 1200px) {
-        width: 66.6667%;
+    @media (max-width: 767px) {
+        h2, .h2, h3, .h3, h4, .h4, h5, .h5, h6, .h6 {
+            margin-bottom: 0.5em;
+        }
+    }
+}
+
+.news-article-meta {
+    margin-bottom: range.build(24, 40, px, 375, 768);
+    text-align: left;
+
+    &-item {
+        .h2 {
+            font-size: range.build(24, 32);
+        }
+
+        span:not(.h2) {
+            text-transform: uppercase;
+            font-size: range.build(12, 14);
+            color: var(--color-font-secondary);
+        }
+    }
+}
+
+.news-article-content-body {
+    :is(.wp-block-embed, .wp-block-video, figure.wp-block-embed, figure.wp-block-video, iframe, video) {
+        max-width: none;
+        width: 100%;
     }
 }
 

@@ -12,14 +12,6 @@
 
             <div class="news-article-hero-body">
                 <h1 class="news-article-title">{{ $article->title }}</h1>
-
-                <div class="news-article-hero-info">
-                    <div class="news-article-hero-info-body">
-                        <time
-                            datetime="{{ $article->created_at->format('Y-m-d') }}">{{ $article->created_at->translatedFormat('d M Y') }}</time>
-                        <div>{{ $article->first_category->name }}</div>
-                    </div>
-                </div>
             </div>
         </div>
 
@@ -29,7 +21,23 @@
     <section class="news-article-content">
         <div class="container news-article-content-container">
             <article class="formatted-text news-article-description">
-                {!! $article->description !!}
+                <div class="news-article-meta">
+                    <p class="news-article-meta-item">
+                        <span>{{ __('base.date') }}</span>
+                        <br>
+                        <span class="h2"><strong>{{ $article->created_at->translatedFormat('d M Y') }}</strong></span>
+                    </p>
+                    @if ($article->first_category)
+                        <p class="news-article-meta-item">
+                            <span>{{ __('base.category') }}</span>
+                            <br>
+                            <span class="h2"><strong>{{ $article->first_category->name }}</strong></span>
+                        </p>
+                    @endif
+                </div>
+                <div class="news-article-content-body">
+                    {!! $article->description !!}
+                </div>
             </article>
         </div>
 

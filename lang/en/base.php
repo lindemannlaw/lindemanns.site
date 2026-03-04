@@ -31,4 +31,6 @@ return [
     'property_type' => 'Property Type',
     'status' => 'Status',
     'year_built' => 'Year Built',
+    'date' => 'Date',
+    'category' => 'Category',
 ];

@@ -31,4 +31,6 @@ return [
     'property_type' => 'Immobilientyp',
     'status'        => 'Status',
     'year_built'    => 'Baujahr',
+    'date'          => 'Datum',
+    'category'      => 'Kategorie',
 ];

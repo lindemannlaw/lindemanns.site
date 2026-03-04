@@ -210,17 +210,6 @@
         > .project-property-details,
         > .project-property-details + .project-description-content {
             padding-top: 1.5em;
-            position: relative;
-
-            &::before {
-                content: '';
-                position: absolute;
-                top: 0;
-                left: 0;
-                width: var(--project-details-line-length);
-                height: 1.5px;
-                background-color: var(--color-primary-brand-800-dark);
-            }
         }
 
         > .project-description-content {

@@ -239,6 +239,7 @@
     flex-direction: column;
     position: relative;
     gap: 26px;
+    overflow: hidden;
 
     @media (max-width: 599px) {
         max-width: 440px;
@@ -248,6 +249,8 @@
     &-image {
         aspect-ratio: 1 / 1.2;
         border-radius: var(--radius);
+        transition: var(--transition);
+        transition-property: scale;
     }
 
     &-title {
@@ -305,6 +308,10 @@
 
     &:hover {
         .project-simple-card {
+            &-image {
+                scale: 1.05;
+            }
+
             &-title {
                 color: var(--color-interaction-primary-hover);
             }
