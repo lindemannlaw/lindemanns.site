@@ -107,60 +107,9 @@
 
 .home-portfolio-link {
     justify-self: flex-end;
-    color: var(--color-interaction-primary-default);
-    text-decoration: none;
-    display: flex;
-    align-items: center;
-    position: relative;
-    gap: .75em;
-    transition: var(--transition);
-    transition-property: color;
     margin-top: .5em;
 
     @media (min-width: 768px) {
         margin-top: 0;
-    }
-
-    &:hover {
-        color: var(--color-interaction-primary-hover);
-        opacity: 1;
-    }
-
-    &::before,
-    &::after {
-        display: block;
-        content: '';
-        width: 2em;
-        height: 2px;
-        background-color: currentColor;
-        transition: var(--transition);
-        transition-property: background-color;
-    }
-
-    &::after {
-        background-color: currentColor;
-    }
-
-    &::before {
-        @media (min-width: 768px) {
-            width: 8px;
-            height: 8px;
-            border-top: 2px solid currentColor;
-            border-right: 2px solid currentColor;
-            background: none;
-            position: absolute;
-            right: 0;
-            top: 50%;
-            translate: 0 -50%;
-            rotate: 45deg;
-            opacity: 0;
-            transition-property: opacity, border-color;
-        }
-    }
-
-    @media (min-width: 768px) {
-        &:hover::before {
-            opacity: 1;
-        }
     }
 }

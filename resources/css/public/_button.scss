@@ -93,3 +93,14 @@
         }
     }
 }
+
+.btn-view-all {
+    --btn-fz: #{range.build(16, 20)};
+
+    font-family: var(--font-primary);
+    font-weight: var(--font-weight-light);
+
+    &::after {
+        width: 10px;
+    }
+}

@@ -172,28 +172,7 @@
     &-link {
         grid-column: 3;
         justify-self: end;
-        display: inline-flex;
-        align-items: center;
-        gap: .5em;
-        color: var(--color-interaction-primary-default);
-        font-size: range.build(14, 16);
         white-space: nowrap;
-        transition: var(--transition);
-        transition-property: color;
-
-        &::after {
-            margin-left: 0;
-            translate: 0 0;
-            background-color: currentColor;
-        }
-
-        &:hover {
-            color: var(--color-interaction-primary-hover);
-        }
-
-        &.is-active {
-            color: var(--color-interaction-primary-active);
-        }
     }
 }
 

@@ -107,7 +107,7 @@ $galleryImageSizes = [
                 <h3 class="other-projects-title">{{ __('public.other_cases') }}</h3>
                 <a
                     href="{{ route('public.portfolio') }}"
-                    class="home-portfolio-link"
+                    class="btn btn-submit btn-view-all home-portfolio-link"
                 >{{ __('base.view_all') }}</a>
             </div>
 
