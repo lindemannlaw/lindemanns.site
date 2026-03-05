@@ -68,6 +68,9 @@ $colors: (
     --font-weight-semibold: 600;
     --font-weight-bold: 700;
     --font-weight-black: 900;
+    
+    --font-secondary-default-weight: var(--font-weight-medium);
+    --font-menu-weight: var(--font-weight-medium);
 
     --width-min: #{base.$width-min + px};
     --width-max: #{base.$width-max + px};

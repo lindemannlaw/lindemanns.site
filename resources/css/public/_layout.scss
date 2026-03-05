@@ -39,7 +39,13 @@ h6,
 .footer-menu {
     font-family: var(--font-secondary);
     font-variation-settings: var(--font-secondary-settings);
-    font-weight: 550;
+    font-weight: var(--font-secondary-default-weight);
+}
+
+.main-menu,
+.footer-menu {
+    font-weight: var(--font-menu-weight);
+    text-transform: uppercase;
 }
 
 input,
@@ -233,7 +239,7 @@ section:has(.target-anchor-section) {
     }
 
     strong {
-        font-weight: bold;
+        font-weight: var(--font-weight-bold);
     }
 
     picture {
