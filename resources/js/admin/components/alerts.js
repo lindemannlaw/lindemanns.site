@@ -1,6 +1,10 @@
 import * as bootstrap from 'bootstrap';
 
 const alertsSection = document.getElementById('toast-alerts-section');
+const toastOptions = {
+    autohide: true,
+    delay: 5000,
+};
 
 export function alerts() {
     const allToastAlerts = document.querySelectorAll('[data-toast-alert]');
@@ -28,7 +32,7 @@ export function showAlert({type= 'success', message = null}) {
 
     alertsSection.appendChild(alert);
 
-    const toast = new bootstrap.Toast(alert);
+    const toast = new bootstrap.Toast(alert, toastOptions);
 
     toast.show();
 }
@@ -38,7 +42,7 @@ export function showAllAlerts() {
     let delay = 0;
 
     allToastAlerts.forEach(toastAlert => {
-        const toast = new bootstrap.Toast(toastAlert);
+        const toast = new bootstrap.Toast(toastAlert, toastOptions);
 
         setTimeout(() => {
             toast.show();
