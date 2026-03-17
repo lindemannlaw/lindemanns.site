@@ -156,13 +156,13 @@ $galleryImageSizes = [
                                 @if(filled(data_get($block, 'headline')))
                                     @php
                                         $headlineColors = [
-                                            'dark'  => 'var(--color-dark)',
-                                            'gold'  => 'var(--color-gold)',
-                                            'teal'  => 'var(--color-primary-brand-600-stronger)',
-                                            'gray'  => 'var(--color-gray)',
-                                            'white' => 'var(--color-white)',
+                                            'emerald-950' => 'var(--color-primary-brand-950-darkest)',
+                                            'emerald-900' => 'var(--color-primary-brand-900-darker-silent)',
+                                            'emerald-800' => 'var(--color-primary-brand-800-dark)',
+                                            'primary'     => 'var(--color-primary-brand-500-main)',
+                                            'gold-bright' => 'var(--color-gold-lighter)',
                                         ];
-                                        $hColor = $headlineColors[data_get($block, 'headline_color', 'dark')] ?? 'var(--color-dark)';
+                                        $hColor = $headlineColors[data_get($block, 'headline_color', 'emerald-950')] ?? 'var(--color-primary-brand-950-darkest)';
                                         $hFont  = data_get($block, 'headline_font', 'pangea') === 'nicevar' ? 'font-nicevar' : '';
                                     @endphp
                                     <h3

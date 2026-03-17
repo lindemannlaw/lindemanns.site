@@ -94,8 +94,8 @@
                                             </div>
                                             <div class="col-6 col-lg-2">
                                                 <select class="form-select" name="description_blocks[{{ $lang }}][{{ $blockIndex }}][headline_color]">
-                                                    @foreach(['dark' => 'Dark', 'gold' => 'Gold', 'teal' => 'Teal', 'gray' => 'Grau', 'white' => 'Weiss'] as $val => $label)
-                                                        <option value="{{ $val }}" {{ data_get($block, 'headline_color', 'dark') === $val ? 'selected' : '' }}>{{ $label }}</option>
+                                                    @foreach(['emerald-950' => 'Emerald 950', 'emerald-900' => 'Emerald 900', 'emerald-800' => 'Emerald 800', 'primary' => 'Primary (Teal)', 'gold-bright' => 'Gold Bright'] as $val => $label)
+                                                        <option value="{{ $val }}" {{ data_get($block, 'headline_color', 'emerald-950') === $val ? 'selected' : '' }}>{{ $label }}</option>
                                                     @endforeach
                                                 </select>
                                             </div>
@@ -395,11 +395,11 @@
                                     </div>
                                     <div class="col-6 col-lg-2">
                                         <select class="form-select" name="description_blocks[{{ $lang }}][__block__][headline_color]">
-                                            <option value="dark" selected>Dark</option>
-                                            <option value="gold">Gold</option>
-                                            <option value="teal">Teal</option>
-                                            <option value="gray">Grau</option>
-                                            <option value="white">Weiss</option>
+                                            <option value="emerald-950" selected>Emerald 950</option>
+                                            <option value="emerald-900">Emerald 900</option>
+                                            <option value="emerald-800">Emerald 800</option>
+                                            <option value="primary">Primary (Teal)</option>
+                                            <option value="gold-bright">Gold Bright</option>
                                         </select>
                                     </div>
                                     <div class="col-6 col-lg-4">

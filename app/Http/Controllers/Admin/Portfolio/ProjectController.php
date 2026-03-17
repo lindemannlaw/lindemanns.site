@@ -331,13 +331,13 @@ class ProjectController extends Controller
                         $colSpan = 12 - $colStart + 1;
                     }
 
-                    $allowedColors = ['dark', 'gold', 'teal', 'gray', 'white'];
-                    $headlineColor = data_get($block, 'headline_color', 'dark');
+                    $allowedColors = ['emerald-950', 'emerald-900', 'emerald-800', 'primary', 'gold-bright'];
+                    $headlineColor = data_get($block, 'headline_color', 'emerald-950');
 
                     $preparedLocaleBlocks[] = [
                         'type'           => 'text_column',
                         'headline'       => data_get($block, 'headline') ?: null,
-                        'headline_color' => in_array($headlineColor, $allowedColors) ? $headlineColor : 'dark',
+                        'headline_color' => in_array($headlineColor, $allowedColors) ? $headlineColor : 'emerald-950',
                         'headline_font'   => data_get($block, 'headline_font', 'pangea') === 'nicevar' ? 'nicevar' : 'pangea',
                         'padding_top'     => max(0, min(300, (int)data_get($block, 'padding_top', 0))),
                         'padding_bottom'  => max(0, min(300, (int)data_get($block, 'padding_bottom', 0))),
