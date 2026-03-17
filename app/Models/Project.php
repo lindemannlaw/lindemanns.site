@@ -21,6 +21,7 @@ class Project extends Model implements HasMedia
         'slug',
         'short_description',
         'description',
+        'description_blocks',
 
         'seo_title',
         'seo_description',
@@ -40,6 +41,7 @@ class Project extends Model implements HasMedia
         'title',
         'short_description',
         'description',
+        'description_blocks',
 
         'seo_title',
         'seo_description',
@@ -57,6 +59,7 @@ class Project extends Model implements HasMedia
             'title' => 'json',
             'short_description' => 'json',
             'description' => 'json',
+            'description_blocks' => 'json',
             'seo_title' => 'json',
             'seo_description' => 'json',
             'seo_keywords' => 'json',

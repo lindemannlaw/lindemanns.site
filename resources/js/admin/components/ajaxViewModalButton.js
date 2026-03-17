@@ -5,6 +5,7 @@ import { ajax } from '../../ajax.js';
 import { select } from './select.js';
 import { fields } from '../fields/fields.js';
 import { wysiwyg } from "./wysiwyg.js";
+import { projectDescriptionBlocks } from "./projectDescriptionBlocks.js";
 
 export function ajaxViewModalButton() {
     document.addEventListener('click', event => {
@@ -67,4 +68,5 @@ function updateSyncLibs() {
     select();
     fields();
     wysiwyg();
+    projectDescriptionBlocks();
 }

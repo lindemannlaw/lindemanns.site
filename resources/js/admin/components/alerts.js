@@ -3,7 +3,7 @@ import * as bootstrap from 'bootstrap';
 const alertsSection = document.getElementById('toast-alerts-section');
 const toastOptions = {
     autohide: true,
-    delay: 5000,
+    delay: 3000,
 };
 
 export function alerts() {

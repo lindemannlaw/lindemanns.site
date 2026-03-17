@@ -13,6 +13,7 @@ import { wysiwyg } from "./components/wysiwyg.js";
 import { alerts } from "./components/alerts.js";
 import { datepicker} from "./components/datepicker.js";
 import { select } from "./components/select.js";
+import { projectDescriptionBlocks } from "./components/projectDescriptionBlocks.js";
 
 import { saveAndShowActiveTab } from "./saveAndShowActiveTab.js";
 
@@ -31,6 +32,7 @@ wysiwyg();
 alerts();
 datepicker();
 select();
+projectDescriptionBlocks();
 
 saveAndShowActiveTab();
 

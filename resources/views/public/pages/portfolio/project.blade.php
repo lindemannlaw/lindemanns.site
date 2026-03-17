@@ -63,7 +63,7 @@ $galleryImageSizes = [
 
     <section class="project-content">
         <div class="container project-content-container">
-            <article class="formatted-text project-description">
+            <article class="formatted-text project-description {{ $project->hasAnyPropertyDetail() ? 'has-details' : 'no-details' }}">
                 @if ($project->hasAnyPropertyDetail())
                     <div class="project-property-details">
                         <h2><strong>{{ __('base.property_details') }}</strong></h2>
@@ -80,9 +80,50 @@ $galleryImageSizes = [
                     </div>
                 @endif
 
-                <div class="project-description-content">
-                    {!! $project->description !!}
-                </div>
+                @php
+                    $descriptionBlocks = $project->getTranslation('description_blocks', app()->getLocale()) ?: [];
+
+                    if (empty($descriptionBlocks)) {
+                        $descriptionBlocks = [[
+                            'type' => 'text',
+                            'content' => $project->description,
+                        ]];
+                    }
+                @endphp
+
+                @foreach($descriptionBlocks as $block)
+                    @if(data_get($block, 'type') === 'floating_gallery')
+                        <div class="project-floating-gallery">
+                            @foreach((data_get($block, 'items') ?: []) as $item)
+                                <figure
+                                    class="project-floating-gallery-item"
+                                    style="--col-start: {{ max(1, min(12, (int)data_get($item, 'col_start', 1))) }}; --col-span: {{ max(1, min(12, (int)data_get($item, 'col_span', 12))) }};"
+                                >
+                                    <img
+                                        src="{{ data_get($item, 'image') }}"
+                                        alt="{{ data_get($item, 'headline', $project->title) }}"
+                                        loading="lazy"
+                                    >
+
+                                    @if(filled(data_get($item, 'headline')) || filled(data_get($item, 'subhead')))
+                                        <figcaption class="project-floating-gallery-caption">
+                                            @if(filled(data_get($item, 'headline')))
+                                                <strong>{{ data_get($item, 'headline') }}</strong>
+                                            @endif
+                                            @if(filled(data_get($item, 'subhead')))
+                                                <span>{{ data_get($item, 'subhead') }}</span>
+                                            @endif
+                                        </figcaption>
+                                    @endif
+                                </figure>
+                            @endforeach
+                        </div>
+                    @else
+                        <div class="project-description-content">
+                            {!! data_get($block, 'content') !!}
+                        </div>
+                    @endif
+                @endforeach
             </article>
 
             @if ($project->hasMedia($project->mediaFiles))

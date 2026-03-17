@@ -1,6 +1,6 @@
 {
-  "_ajax-N1Z4onJZ.js": {
-    "file": "assets/js/ajax-N1Z4onJZ.js",
+  "_ajax-C2icHxF2.js": {
+    "file": "assets/js/ajax-C2icHxF2.js",
     "name": "ajax"
   },
   "resources/css/admin/admin.scss": {
@@ -12,7 +12,7 @@
     ]
   },
   "resources/css/public/public.scss": {
-    "file": "assets/css/public-C75qya4-.css",
+    "file": "assets/css/public-Ba9ULu-n.css",
     "src": "resources/css/public/public.scss",
     "isEntry": true,
     "names": [
@@ -20,21 +20,21 @@
     ]
   },
   "resources/js/admin/admin.js": {
-    "file": "assets/js/admin-CCmNa6Oa.js",
+    "file": "assets/js/admin-BcAxPPkU.js",
     "name": "admin",
     "src": "resources/js/admin/admin.js",
     "isEntry": true,
     "imports": [
-      "_ajax-N1Z4onJZ.js"
+      "_ajax-C2icHxF2.js"
     ]
   },
   "resources/js/public/public.js": {
-    "file": "assets/js/public-EDFxst03.js",
+    "file": "assets/js/public-CHCJgk3G.js",
     "name": "public",
     "src": "resources/js/public/public.js",
     "isEntry": true,
     "imports": [
-      "_ajax-N1Z4onJZ.js"
+      "_ajax-C2icHxF2.js"
     ]
   }
 }

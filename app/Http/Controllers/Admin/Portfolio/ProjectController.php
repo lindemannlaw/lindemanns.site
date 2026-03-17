@@ -11,6 +11,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
 
@@ -32,6 +33,7 @@ class ProjectController extends Controller
 
     public function store(StoreRequest $request): View|JsonResponse|string {
         $data = $request->validated();
+        $data = $this->prepareDescriptionBlocksData($request, $data);
 
         try {
             DB::beginTransaction();
@@ -108,6 +110,7 @@ class ProjectController extends Controller
 
     public function update(UpdateRequest $request, Project $project): View|JsonResponse|RedirectResponse|string {
         $data = $request->validated();
+        $data = $this->prepareDescriptionBlocksData($request, $data);
 
         try {
             DB::beginTransaction();
@@ -282,5 +285,97 @@ class ProjectController extends Controller
         $projects = Project::latest()->get();
 
         return view('admin.portfolio.projects.list', compact('projects'))->render();
+    }
+
+    private function prepareDescriptionBlocksData(Request $request, array $data): array
+    {
+        $descriptionBlocks = [];
+        $description = [];
+
+        foreach (supported_languages_keys() as $locale) {
+            $localeBlocks = data_get($data, "description_blocks.{$locale}", []);
+            $preparedLocaleBlocks = [];
+            $legacyDescriptionParts = [];
+
+            foreach ($localeBlocks as $blockIndex => $block) {
+                $type = data_get($block, 'type');
+
+                if (!in_array($type, ['text', 'floating_gallery'], true)) {
+                    continue;
+                }
+
+                if ($type === 'text') {
+                    $content = (string)data_get($block, 'content', '');
+
+                    $preparedLocaleBlocks[] = [
+                        'type' => 'text',
+                        'content' => $content,
+                    ];
+
+                    if (filled(trim(strip_tags($content)))) {
+                        $legacyDescriptionParts[] = $content;
+                    }
+
+                    continue;
+                }
+
+                $items = data_get($block, 'items', []);
+                $preparedItems = [];
+
+                foreach ($items as $itemIndex => $item) {
+                    $file = data_get($request->file('description_blocks'), "{$locale}.{$blockIndex}.items.{$itemIndex}.image_file");
+                    $oldImage = data_get($item, 'image');
+                    $image = is_string($oldImage) ? $oldImage : null;
+
+                    if ($file) {
+                        $path = $file->store('projects/description-blocks', 'public');
+                        $image = Storage::url($path);
+                    }
+
+                    if (!$image) {
+                        continue;
+                    }
+
+                    $colStart = max(1, min(12, (int)data_get($item, 'col_start', 1)));
+                    $colSpan = max(1, min(12, (int)data_get($item, 'col_span', 12)));
+
+                    if (($colStart + $colSpan - 1) > 12) {
+                        $colSpan = 12 - $colStart + 1;
+                    }
+
+                    $preparedItems[] = [
+                        'headline' => data_get($item, 'headline'),
+                        'subhead' => data_get($item, 'subhead'),
+                        'col_start' => $colStart,
+                        'col_span' => $colSpan,
+                        'image' => $image,
+                    ];
+                }
+
+                if (empty($preparedItems)) {
+                    continue;
+                }
+
+                $preparedLocaleBlocks[] = [
+                    'type' => 'floating_gallery',
+                    'items' => $preparedItems,
+                ];
+            }
+
+            if (empty($preparedLocaleBlocks)) {
+                $preparedLocaleBlocks[] = [
+                    'type' => 'text',
+                    'content' => '',
+                ];
+            }
+
+            $descriptionBlocks[$locale] = array_values($preparedLocaleBlocks);
+            $description[$locale] = implode(PHP_EOL . PHP_EOL, $legacyDescriptionParts);
+        }
+
+        $data['description_blocks'] = $descriptionBlocks;
+        $data['description'] = $description;
+
+        return $data;
     }
 }
