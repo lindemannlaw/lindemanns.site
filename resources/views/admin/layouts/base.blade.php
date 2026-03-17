@@ -13,6 +13,11 @@
 </head>
 <body class="bg-light">
 
+    {{-- Inline SVG sprite – eliminates separate HTTP request for icons --}}
+    <div style="display:none" aria-hidden="true">
+        {!! file_get_contents(public_path('img/icons/bootstrap-icons.svg')) !!}
+    </div>
+
     <div id="preloader" class="preloader active">
         <div class="preloader-spinner"></div>
     </div>
