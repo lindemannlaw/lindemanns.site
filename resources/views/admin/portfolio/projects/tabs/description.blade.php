@@ -167,6 +167,7 @@
                                                                         :name="'description_blocks['. $lang .'][' . $blockIndex . '][items][' . $itemIndex . '][image_col_span]'"
                                                                         :value="data_get($item, 'image_col_span')"
                                                                         :placeholder="'Bild Spalten'"
+                                                                        :required="false"
                                                                         :fieldAttrs="'min=1 max=12'"
                                                                     />
                                                                 </div>
@@ -175,6 +176,7 @@
                                                                         :name="'description_blocks['. $lang .'][' . $blockIndex . '][items][' . $itemIndex . '][text_col_span]'"
                                                                         :value="data_get($item, 'text_col_span')"
                                                                         :placeholder="'Text Spalten'"
+                                                                        :required="false"
                                                                         :fieldAttrs="'min=1 max=12'"
                                                                     />
                                                                 </div>
@@ -454,10 +456,10 @@
                                         </select>
                                     </div>
                                     <div class="col-4">
-                                        <x-admin.field.number :name="'description_blocks['. $lang .'][__block__][items][__item__][image_col_span]'" :placeholder="'Bild Spalten'" :fieldAttrs="'min=1 max=12'" />
+                                        <x-admin.field.number :name="'description_blocks['. $lang .'][__block__][items][__item__][image_col_span]'" :placeholder="'Bild Spalten'" :required="false" :fieldAttrs="'min=1 max=12'" />
                                     </div>
                                     <div class="col-4">
-                                        <x-admin.field.number :name="'description_blocks['. $lang .'][__block__][items][__item__][text_col_span]'" :placeholder="'Text Spalten'" :fieldAttrs="'min=1 max=12'" />
+                                        <x-admin.field.number :name="'description_blocks['. $lang .'][__block__][items][__item__][text_col_span]'" :placeholder="'Text Spalten'" :required="false" :fieldAttrs="'min=1 max=12'" />
                                     </div>
                                 </div>
                             </div>
