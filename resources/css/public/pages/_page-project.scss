@@ -203,8 +203,7 @@
         }
     }
 
-    > .project-floating-gallery,
-    > .project-text-columns {
+    > .project-floating-gallery {
         grid-column: 1 / -1;
     }
 
@@ -329,16 +328,9 @@
         margin-bottom: 0;
     }
 
-    .project-text-columns {
-        display: grid;
-        grid-template-columns: repeat(12, minmax(0, 1fr));
-        gap: range.build(12, 24, px, 375, 1240);
-        margin: 1.4em 0;
-        align-items: start;
-    }
-
     .project-text-column-item {
         grid-column: var(--col-start, 1) / span var(--col-span, 12);
+        align-self: start;
     }
 
     @media (max-width: 767px) {
