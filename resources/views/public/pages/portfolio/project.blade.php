@@ -148,8 +148,10 @@ $galleryImageSizes = [
                         @php
                             $colStart = max(1, min(12, (int)data_get($block, 'col_start', 1)));
                             $colSpan  = max(1, min(12, (int)data_get($block, 'col_span', 12)));
+                            $ptop     = max(0, min(300, (int)data_get($block, 'padding_top', 0)));
+                            $pbottom  = max(0, min(300, (int)data_get($block, 'padding_bottom', 0)));
                         @endphp
-                        <div class="project-text-columns">
+                        <div class="project-text-columns" style="{{ $ptop > 0 ? 'padding-top:' . $ptop . 'px;' : '' }}{{ $pbottom > 0 ? 'padding-bottom:' . $pbottom . 'px;' : '' }}">
                             <div class="project-text-column-item" style="--col-start: {{ $colStart }}; --col-span: {{ $colSpan }};">
                                 @if(filled(data_get($block, 'headline')))
                                     @php
@@ -161,9 +163,10 @@ $galleryImageSizes = [
                                             'white' => 'var(--color-white)',
                                         ];
                                         $hColor = $headlineColors[data_get($block, 'headline_color', 'dark')] ?? 'var(--color-dark)';
+                                        $hFont  = data_get($block, 'headline_font', 'pangea') === 'nicevar' ? 'font-nicevar' : '';
                                     @endphp
                                     <h3
-                                        class="{{ data_get($block, 'headline_line') ? 'has-line' : '' }}"
+                                        class="{{ trim((data_get($block, 'headline_line') ? 'has-line ' : '') . $hFont) }}"
                                         style="color: {{ $hColor }}"
                                     >{{ data_get($block, 'headline') }}</h3>
                                 @endif
@@ -183,7 +186,11 @@ $galleryImageSizes = [
                             </div>
                         </div>
                     @elseif(data_get($block, 'type') === 'floating_gallery')
-                        <div class="project-floating-gallery">
+                        @php
+                            $fptop    = max(0, min(300, (int)data_get($block, 'padding_top', 0)));
+                            $fpbottom = max(0, min(300, (int)data_get($block, 'padding_bottom', 0)));
+                        @endphp
+                        <div class="project-floating-gallery" style="{{ $fptop > 0 ? 'padding-top:' . $fptop . 'px;' : '' }}{{ $fpbottom > 0 ? 'padding-bottom:' . $fpbottom . 'px;' : '' }}">
                             @foreach((data_get($block, 'items') ?: []) as $item)
                                 @php
                                     $headline = trim((string)data_get($item, 'headline', ''));

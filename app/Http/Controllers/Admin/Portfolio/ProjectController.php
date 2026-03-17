@@ -338,6 +338,9 @@ class ProjectController extends Controller
                         'type'           => 'text_column',
                         'headline'       => data_get($block, 'headline') ?: null,
                         'headline_color' => in_array($headlineColor, $allowedColors) ? $headlineColor : 'dark',
+                        'headline_font'   => data_get($block, 'headline_font', 'pangea') === 'nicevar' ? 'nicevar' : 'pangea',
+                        'padding_top'     => max(0, min(300, (int)data_get($block, 'padding_top', 0))),
+                        'padding_bottom'  => max(0, min(300, (int)data_get($block, 'padding_bottom', 0))),
                         'headline_line'  => (bool)data_get($block, 'headline_line', false),
                         'content'       => (string)data_get($block, 'content', ''),
                         'content_line'  => (bool)data_get($block, 'content_line', false),
@@ -388,9 +391,11 @@ class ProjectController extends Controller
                 }
 
                 $preparedLocaleBlocks[] = [
-                    'type' => 'floating_gallery',
-                    'items' => $preparedItems,
-                ];
+                        'type'           => 'floating_gallery',
+                        'items'          => $preparedItems,
+                        'padding_top'    => max(0, min(300, (int)data_get($block, 'padding_top', 0))),
+                        'padding_bottom' => max(0, min(300, (int)data_get($block, 'padding_bottom', 0))),
+                    ];
             }
 
             if (empty($preparedLocaleBlocks)) {

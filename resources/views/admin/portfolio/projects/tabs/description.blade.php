@@ -92,11 +92,17 @@
                                                     :placeholder="'Headline (optional)'"
                                                 />
                                             </div>
-                                            <div class="col-12 col-lg-4">
+                                            <div class="col-6 col-lg-2">
                                                 <select class="form-select" name="description_blocks[{{ $lang }}][{{ $blockIndex }}][headline_color]">
-                                                    @foreach(['dark' => 'Dark (Standard)', 'gold' => 'Gold', 'teal' => 'Teal', 'gray' => 'Grau', 'white' => 'Weiss'] as $val => $label)
+                                                    @foreach(['dark' => 'Dark', 'gold' => 'Gold', 'teal' => 'Teal', 'gray' => 'Grau', 'white' => 'Weiss'] as $val => $label)
                                                         <option value="{{ $val }}" {{ data_get($block, 'headline_color', 'dark') === $val ? 'selected' : '' }}>{{ $label }}</option>
                                                     @endforeach
+                                                </select>
+                                            </div>
+                                            <div class="col-6 col-lg-2">
+                                                <select class="form-select" name="description_blocks[{{ $lang }}][{{ $blockIndex }}][headline_font]">
+                                                    <option value="pangea" {{ data_get($block, 'headline_font', 'pangea') === 'pangea' ? 'selected' : '' }}>Pangea</option>
+                                                    <option value="nicevar" {{ data_get($block, 'headline_font') === 'nicevar' ? 'selected' : '' }}>NiceVar Ultra Light</option>
                                                 </select>
                                             </div>
                                             <div class="col-12">
@@ -154,7 +160,7 @@
                                                     :placeholder="'Link URL (optional, z.B. /about)'"
                                                 />
                                             </div>
-                                            <div class="col-12 col-lg-6">
+                                            <div class="col-6 col-lg-3">
                                                 <x-admin.field.number
                                                     :name="'description_blocks['. $lang .'][' . $blockIndex . '][col_span]'"
                                                     :value="data_get($block, 'col_span', 12)"
@@ -162,12 +168,28 @@
                                                     :fieldAttrs="'min=1 max=12'"
                                                 />
                                             </div>
-                                            <div class="col-12 col-lg-6">
+                                            <div class="col-6 col-lg-3">
                                                 <x-admin.field.number
                                                     :name="'description_blocks['. $lang .'][' . $blockIndex . '][col_start]'"
                                                     :value="data_get($block, 'col_start', 1)"
                                                     :placeholder="'Start column (1-12)'"
                                                     :fieldAttrs="'min=1 max=12'"
+                                                />
+                                            </div>
+                                            <div class="col-6 col-lg-3">
+                                                <x-admin.field.number
+                                                    :name="'description_blocks['. $lang .'][' . $blockIndex . '][padding_top]'"
+                                                    :value="data_get($block, 'padding_top', 0)"
+                                                    :placeholder="'Padding oben (px)'"
+                                                    :fieldAttrs="'min=0 max=300 step=4'"
+                                                />
+                                            </div>
+                                            <div class="col-6 col-lg-3">
+                                                <x-admin.field.number
+                                                    :name="'description_blocks['. $lang .'][' . $blockIndex . '][padding_bottom]'"
+                                                    :value="data_get($block, 'padding_bottom', 0)"
+                                                    :placeholder="'Padding unten (px)'"
+                                                    :fieldAttrs="'min=0 max=300 step=4'"
                                                 />
                                             </div>
                                         </div>
@@ -256,6 +278,24 @@
                                             :title="'Add image'"
                                             :iconName="'plus-circle'"
                                         />
+                                        <div class="row g-3 mt-1">
+                                            <div class="col-6">
+                                                <x-admin.field.number
+                                                    :name="'description_blocks['. $lang .'][' . $blockIndex . '][padding_top]'"
+                                                    :value="data_get($block, 'padding_top', 0)"
+                                                    :placeholder="'Padding oben (px)'"
+                                                    :fieldAttrs="'min=0 max=300 step=4'"
+                                                />
+                                            </div>
+                                            <div class="col-6">
+                                                <x-admin.field.number
+                                                    :name="'description_blocks['. $lang .'][' . $blockIndex . '][padding_bottom]'"
+                                                    :value="data_get($block, 'padding_bottom', 0)"
+                                                    :placeholder="'Padding unten (px)'"
+                                                    :fieldAttrs="'min=0 max=300 step=4'"
+                                                />
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -324,24 +364,48 @@
                                     :title="'Add image'"
                                     :iconName="'plus-circle'"
                                 />
+                                <div class="row g-3 mt-1">
+                                    <div class="col-6">
+                                        <x-admin.field.number
+                                            :name="'description_blocks['. $lang .'][__block__][padding_top]'"
+                                            :value="0"
+                                            :placeholder="'Padding oben (px)'"
+                                            :fieldAttrs="'min=0 max=300 step=4'"
+                                        />
+                                    </div>
+                                    <div class="col-6">
+                                        <x-admin.field.number
+                                            :name="'description_blocks['. $lang .'][__block__][padding_bottom]'"
+                                            :value="0"
+                                            :placeholder="'Padding unten (px)'"
+                                            :fieldAttrs="'min=0 max=300 step=4'"
+                                        />
+                                    </div>
+                                </div>
                             </div>
 
                             <div data-block-type-panel="text_column" class="d-flex flex-column gap-3 d-none">
                                 <div class="row g-3">
-                                    <div class="col-12 col-lg-8">
+                                    <div class="col-12 col-lg-6">
                                         <x-admin.field.text
                                             :name="'description_blocks['. $lang .'][__block__][headline]'"
                                             :required="false"
                                             :placeholder="'Headline (optional)'"
                                         />
                                     </div>
-                                    <div class="col-12 col-lg-4">
+                                    <div class="col-6 col-lg-2">
                                         <select class="form-select" name="description_blocks[{{ $lang }}][__block__][headline_color]">
-                                            <option value="dark" selected>Dark (Standard)</option>
+                                            <option value="dark" selected>Dark</option>
                                             <option value="gold">Gold</option>
                                             <option value="teal">Teal</option>
                                             <option value="gray">Grau</option>
                                             <option value="white">Weiss</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-6 col-lg-4">
+                                        <select class="form-select" name="description_blocks[{{ $lang }}][__block__][headline_font]">
+                                            <option value="pangea" selected>Pangea</option>
+                                            <option value="nicevar">NiceVar Ultra Light</option>
                                         </select>
                                     </div>
                                     <div class="col-12">
@@ -380,7 +444,7 @@
                                             :placeholder="'Link URL (optional)'"
                                         />
                                     </div>
-                                    <div class="col-12 col-lg-6">
+                                    <div class="col-6 col-lg-3">
                                         <x-admin.field.number
                                             :name="'description_blocks['. $lang .'][__block__][col_span]'"
                                             :value="12"
@@ -388,12 +452,28 @@
                                             :fieldAttrs="'min=1 max=12'"
                                         />
                                     </div>
-                                    <div class="col-12 col-lg-6">
+                                    <div class="col-6 col-lg-3">
                                         <x-admin.field.number
                                             :name="'description_blocks['. $lang .'][__block__][col_start]'"
                                             :value="1"
                                             :placeholder="'Start column (1-12)'"
                                             :fieldAttrs="'min=1 max=12'"
+                                        />
+                                    </div>
+                                    <div class="col-6 col-lg-3">
+                                        <x-admin.field.number
+                                            :name="'description_blocks['. $lang .'][__block__][padding_top]'"
+                                            :value="0"
+                                            :placeholder="'Padding oben (px)'"
+                                            :fieldAttrs="'min=0 max=300 step=4'"
+                                        />
+                                    </div>
+                                    <div class="col-6 col-lg-3">
+                                        <x-admin.field.number
+                                            :name="'description_blocks['. $lang .'][__block__][padding_bottom]'"
+                                            :value="0"
+                                            :placeholder="'Padding unten (px)'"
+                                            :fieldAttrs="'min=0 max=300 step=4'"
                                         />
                                     </div>
                                 </div>
