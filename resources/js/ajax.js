@@ -70,7 +70,8 @@ export function ajax(event, {form, submitter, url = null, method = null, params 
         })
         .catch(function(error) {
             const errors = parseErrorsMessage(error?.response?.data?.errors);
-            const message = error?.response?.data?.message;
+            const backendError = error?.response?.data?.error;
+            const message = backendError || error?.response?.data?.message || 'Request failed';
 
             if (typeof errorHandler === 'function') errorHandler(error);
 
