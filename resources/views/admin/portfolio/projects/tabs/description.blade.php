@@ -188,6 +188,15 @@
                                                     <div class="border-top pt-3">
                                                         <p class="text-muted small mb-2 fw-semibold">Text</p>
                                                         <div class="row g-2">
+                                                            <div class="col-12">
+                                                                <div class="form-check form-switch">
+                                                                    <input class="form-check-input" type="checkbox" value="1"
+                                                                        name="description_blocks[{{ $lang }}][{{ $blockIndex }}][items][{{ $itemIndex }}][headline_line]"
+                                                                        id="hl_line_{{ $lang }}_{{ $blockIndex }}_{{ $itemIndex }}"
+                                                                        {{ data_get($item, 'headline_line') ? 'checked' : '' }}>
+                                                                    <label class="form-check-label" for="hl_line_{{ $lang }}_{{ $blockIndex }}_{{ $itemIndex }}">Linie vor Headline</label>
+                                                                </div>
+                                                            </div>
                                                             <div class="col-12 col-lg-6">
                                                                 <x-admin.field.text
                                                                     :name="'description_blocks['. $lang .'][' . $blockIndex . '][items][' . $itemIndex . '][headline]'"
@@ -196,26 +205,29 @@
                                                                     :placeholder="'Headline (optional)'"
                                                                 />
                                                             </div>
-                                                            <div class="col-6 col-lg-3">
+                                                            <div class="col-6 col-lg-4">
                                                                 <select class="form-select form-select-sm" name="description_blocks[{{ $lang }}][{{ $blockIndex }}][items][{{ $itemIndex }}][headline_color]">
                                                                     @foreach(['primary' => 'Primary (Dark)', 'emerald-950' => 'Emerald 950', 'emerald-900' => 'Emerald 900', 'emerald-800' => 'Emerald 800', 'gold-bright' => 'Gold Bright'] as $val => $label)
                                                                         <option value="{{ $val }}" {{ data_get($item, 'headline_color', 'primary') === $val ? 'selected' : '' }}>{{ $label }}</option>
                                                                     @endforeach
                                                                 </select>
                                                             </div>
-                                                            <div class="col-6 col-lg-3">
-                                                                <select class="form-select form-select-sm" name="description_blocks[{{ $lang }}][{{ $blockIndex }}][items][{{ $itemIndex }}][headline_font]">
-                                                                    <option value="pangea" {{ data_get($item, 'headline_font', 'pangea') === 'pangea' ? 'selected' : '' }}>Pangea</option>
-                                                                    <option value="nicevar" {{ data_get($item, 'headline_font') === 'nicevar' ? 'selected' : '' }}>NiceVar Ultra Light</option>
-                                                                </select>
+                                                            <div class="col-6 col-lg-2 d-flex align-items-center">
+                                                                <div class="form-check form-switch mb-0">
+                                                                    <input class="form-check-input" type="checkbox" value="nicevar"
+                                                                        name="description_blocks[{{ $lang }}][{{ $blockIndex }}][items][{{ $itemIndex }}][headline_font]"
+                                                                        id="hf_{{ $lang }}_{{ $blockIndex }}_{{ $itemIndex }}"
+                                                                        {{ data_get($item, 'headline_font') === 'nicevar' ? 'checked' : '' }}>
+                                                                    <label class="form-check-label small" for="hf_{{ $lang }}_{{ $blockIndex }}_{{ $itemIndex }}">NiceVar</label>
+                                                                </div>
                                                             </div>
                                                             <div class="col-12">
                                                                 <div class="form-check form-switch">
                                                                     <input class="form-check-input" type="checkbox" value="1"
-                                                                        name="description_blocks[{{ $lang }}][{{ $blockIndex }}][items][{{ $itemIndex }}][headline_line]"
-                                                                        id="hl_line_{{ $lang }}_{{ $blockIndex }}_{{ $itemIndex }}"
-                                                                        {{ data_get($item, 'headline_line') ? 'checked' : '' }}>
-                                                                    <label class="form-check-label" for="hl_line_{{ $lang }}_{{ $blockIndex }}_{{ $itemIndex }}">Linie vor Headline</label>
+                                                                        name="description_blocks[{{ $lang }}][{{ $blockIndex }}][items][{{ $itemIndex }}][content_line]"
+                                                                        id="content_line_{{ $lang }}_{{ $blockIndex }}_{{ $itemIndex }}"
+                                                                        {{ data_get($item, 'content_line') ? 'checked' : '' }}>
+                                                                    <label class="form-check-label" for="content_line_{{ $lang }}_{{ $blockIndex }}_{{ $itemIndex }}">Linie vor Text</label>
                                                                 </div>
                                                             </div>
                                                             <div class="col-12">
@@ -226,15 +238,6 @@
                                                                     :height="200"
                                                                     :buttons="'bold|italic|link'"
                                                                 />
-                                                            </div>
-                                                            <div class="col-12">
-                                                                <div class="form-check form-switch">
-                                                                    <input class="form-check-input" type="checkbox" value="1"
-                                                                        name="description_blocks[{{ $lang }}][{{ $blockIndex }}][items][{{ $itemIndex }}][content_line]"
-                                                                        id="content_line_{{ $lang }}_{{ $blockIndex }}_{{ $itemIndex }}"
-                                                                        {{ data_get($item, 'content_line') ? 'checked' : '' }}>
-                                                                    <label class="form-check-label" for="content_line_{{ $lang }}_{{ $blockIndex }}_{{ $itemIndex }}">Linie vor Text</label>
-                                                                </div>
                                                             </div>
                                                             <div class="col-12 col-lg-6">
                                                                 <x-admin.field.text
@@ -469,10 +472,16 @@
                         <div class="border-top pt-3">
                             <p class="text-muted small mb-2 fw-semibold">Text</p>
                             <div class="row g-2">
+                                <div class="col-12">
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox" value="1" name="description_blocks[{{ $lang }}][__block__][items][__item__][headline_line]">
+                                        <label class="form-check-label">Linie vor Headline</label>
+                                    </div>
+                                </div>
                                 <div class="col-12 col-lg-6">
                                     <x-admin.field.text :name="'description_blocks['. $lang .'][__block__][items][__item__][headline]'" :required="false" :placeholder="'Headline (optional)'" />
                                 </div>
-                                <div class="col-6 col-lg-3">
+                                <div class="col-6 col-lg-4">
                                     <select class="form-select form-select-sm" name="description_blocks[{{ $lang }}][__block__][items][__item__][headline_color]">
                                         <option value="primary" selected>Primary (Dark)</option>
                                         <option value="emerald-950">Emerald 950</option>
@@ -481,26 +490,20 @@
                                         <option value="gold-bright">Gold Bright</option>
                                     </select>
                                 </div>
-                                <div class="col-6 col-lg-3">
-                                    <select class="form-select form-select-sm" name="description_blocks[{{ $lang }}][__block__][items][__item__][headline_font]">
-                                        <option value="pangea" selected>Pangea</option>
-                                        <option value="nicevar">NiceVar Ultra Light</option>
-                                    </select>
-                                </div>
-                                <div class="col-12">
-                                    <div class="form-check form-switch">
-                                        <input class="form-check-input" type="checkbox" value="1" name="description_blocks[{{ $lang }}][__block__][items][__item__][headline_line]">
-                                        <label class="form-check-label">Linie vor Headline</label>
+                                <div class="col-6 col-lg-2 d-flex align-items-center">
+                                    <div class="form-check form-switch mb-0">
+                                        <input class="form-check-input" type="checkbox" value="nicevar" name="description_blocks[{{ $lang }}][__block__][items][__item__][headline_font]">
+                                        <label class="form-check-label small">NiceVar</label>
                                     </div>
-                                </div>
-                                <div class="col-12">
-                                    <x-admin.field.wysiwyg :name="'description_blocks['. $lang .'][__block__][items][__item__][content]'" :placeholder="'Text (optional)'" :height="200" :buttons="'bold|italic|link'" />
                                 </div>
                                 <div class="col-12">
                                     <div class="form-check form-switch">
                                         <input class="form-check-input" type="checkbox" value="1" name="description_blocks[{{ $lang }}][__block__][items][__item__][content_line]">
                                         <label class="form-check-label">Linie vor Text</label>
                                     </div>
+                                </div>
+                                <div class="col-12">
+                                    <x-admin.field.wysiwyg :name="'description_blocks['. $lang .'][__block__][items][__item__][content]'" :placeholder="'Text (optional)'" :height="200" :buttons="'bold|italic|link'" />
                                 </div>
                                 <div class="col-12 col-lg-6">
                                     <x-admin.field.text :name="'description_blocks['. $lang .'][__block__][items][__item__][link_text]'" :required="false" :placeholder="'Link Text (optional)'" />
