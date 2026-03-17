@@ -143,60 +143,83 @@ $galleryImageSizes = [
                     $hiddenLightboxImageUrls = array_values(array_diff($lightboxImageUrls, $floatingImageUrls));
                 @endphp
 
-                @foreach($descriptionBlocks as $block)
-                    @if(data_get($block, 'type') === 'text_column')
-                        @php
-                            $colStart     = max(1, min(12, (int)data_get($block, 'col_start', 1)));
-                            $colSpan      = max(1, min(12, (int)data_get($block, 'col_span', 12)));
-                            $ptop         = max(0, min(300, (int)data_get($block, 'padding_top', 0)));
-                            $pbottom      = max(0, min(300, (int)data_get($block, 'padding_bottom', 0)));
-                            $imgUrl       = data_get($block, 'image');
-                            $hasImage     = filled($imgUrl);
-                            $imgAlignment = $hasImage ? (data_get($block, 'image_alignment', 'top')) : 'top';
-                            $imgColSpan   = max(1, min(12, (int)data_get($block, 'image_col_span', 12)));
-                            $txtColSpan   = max(1, min(12, (int)data_get($block, 'text_col_span', 12)));
-                            $headlineColors = [
-                                'emerald-950' => 'var(--color-primary-brand-950-darkest)',
-                                'emerald-900' => 'var(--color-primary-brand-900-darker-silent)',
-                                'emerald-800' => 'var(--color-primary-brand-800-dark)',
-                                'primary'     => 'var(--color-font-primary)',
-                                'gold-bright' => 'var(--color-gold-lighter)',
-                            ];
-                            $hColor = $headlineColors[data_get($block, 'headline_color', 'primary')] ?? 'var(--color-font-primary)';
-                            $hFont  = data_get($block, 'headline_font', 'pangea') === 'nicevar' ? 'font-nicevar' : '';
-                        @endphp
-                        <div class="project-text-columns" style="{{ $ptop > 0 ? 'padding-top:' . $ptop . 'px;' : '' }}{{ $pbottom > 0 ? 'padding-bottom:' . $pbottom . 'px;' : '' }}">
-                            <div class="project-text-column-item" style="--col-start: {{ $colStart }}; --col-span: {{ $colSpan }};">
-                                <div class="project-text-column-inner{{ $hasImage ? ' has-image image-' . $imgAlignment : '' }}"
-                                     style="{{ $hasImage ? '--img-col-span: ' . $imgColSpan . '; ' : '' }}--text-col-span: {{ $txtColSpan }};">
-                                    @if($hasImage)
-                                        <img class="project-text-column-image" src="{{ $imgUrl }}" alt="{{ data_get($block, 'headline', '') }}" loading="lazy">
-                                    @endif
-                                    <div class="project-text-column-text">
-                                        @if(filled(data_get($block, 'headline')))
-                                            <h3
-                                                class="{{ trim((data_get($block, 'headline_line') ? 'has-line ' : '') . $hFont) }}"
-                                                style="color: {{ $hColor }}"
-                                            >{{ data_get($block, 'headline') }}</h3>
+                @php
+                    // Group consecutive text_column blocks into rows so they share one 12-col grid
+                    $blockGroups = [];
+                    $currentRow  = null;
+                    foreach ($descriptionBlocks as $b) {
+                        if (data_get($b, 'type') === 'text_column') {
+                            if ($currentRow === null) {
+                                $currentRow = ['type' => '_text_column_row', 'items' => []];
+                            }
+                            $currentRow['items'][] = $b;
+                        } else {
+                            if ($currentRow !== null) { $blockGroups[] = $currentRow; $currentRow = null; }
+                            $blockGroups[] = $b;
+                        }
+                    }
+                    if ($currentRow !== null) { $blockGroups[] = $currentRow; }
+                @endphp
+
+                @foreach($blockGroups as $blockOrRow)
+                    @if(data_get($blockOrRow, 'type') === '_text_column_row')
+                        @php $rowItems = data_get($blockOrRow, 'items', []); @endphp
+                        <div class="project-text-columns">
+                            @foreach($rowItems as $block)
+                                @php
+                                    $colStart     = max(1, min(12, (int)data_get($block, 'col_start', 1)));
+                                    $colSpan      = max(1, min(12, (int)data_get($block, 'col_span', 12)));
+                                    $ptop         = max(0, min(300, (int)data_get($block, 'padding_top', 0)));
+                                    $pbottom      = max(0, min(300, (int)data_get($block, 'padding_bottom', 0)));
+                                    $imgUrl       = data_get($block, 'image');
+                                    $hasImage     = filled($imgUrl);
+                                    $imgAlignment = $hasImage ? (data_get($block, 'image_alignment', 'top')) : 'top';
+                                    $imgColSpan   = max(1, min(12, (int)data_get($block, 'image_col_span', 12)));
+                                    $txtColSpan   = max(1, min(12, (int)data_get($block, 'text_col_span', 12)));
+                                    $headlineColors = [
+                                        'emerald-950' => 'var(--color-primary-brand-950-darkest)',
+                                        'emerald-900' => 'var(--color-primary-brand-900-darker-silent)',
+                                        'emerald-800' => 'var(--color-primary-brand-800-dark)',
+                                        'primary'     => 'var(--color-font-primary)',
+                                        'gold-bright' => 'var(--color-gold-lighter)',
+                                    ];
+                                    $hColor = $headlineColors[data_get($block, 'headline_color', 'primary')] ?? 'var(--color-font-primary)';
+                                    $hFont  = data_get($block, 'headline_font', 'pangea') === 'nicevar' ? 'font-nicevar' : '';
+                                @endphp
+                                <div class="project-text-column-item"
+                                     style="--col-start: {{ $colStart }}; --col-span: {{ $colSpan }};{{ $ptop > 0 ? ' padding-top:' . $ptop . 'px;' : '' }}{{ $pbottom > 0 ? ' padding-bottom:' . $pbottom . 'px;' : '' }}">
+                                    <div class="project-text-column-inner{{ $hasImage ? ' has-image image-' . $imgAlignment : '' }}"
+                                         style="{{ $hasImage ? '--img-col-span: ' . $imgColSpan . '; ' : '' }}--text-col-span: {{ $txtColSpan }};">
+                                        @if($hasImage)
+                                            <img class="project-text-column-image" src="{{ $imgUrl }}" alt="{{ data_get($block, 'headline', '') }}" loading="lazy">
                                         @endif
-                                        @if(filled(data_get($block, 'content')))
-                                            <div class="project-text-column-content {{ data_get($block, 'content_line') ? 'has-line' : '' }}">
-                                                {!! data_get($block, 'content') !!}
-                                            </div>
-                                        @endif
-                                        @if(filled(data_get($block, 'link_text')) && filled(data_get($block, 'link_url')))
-                                            <a href="{{ data_get($block, 'link_url') }}" class="project-text-column-link">
-                                                {{ data_get($block, 'link_text') }}
-                                                <svg width="32" height="10" viewBox="0 0 32 10" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-                                                    <path d="M0 5H30M30 5L26 1M30 5L26 9" stroke="currentColor" stroke-width="1.2"/>
-                                                </svg>
-                                            </a>
-                                        @endif
+                                        <div class="project-text-column-text">
+                                            @if(filled(data_get($block, 'headline')))
+                                                <h3
+                                                    class="{{ trim((data_get($block, 'headline_line') ? 'has-line ' : '') . $hFont) }}"
+                                                    style="color: {{ $hColor }}"
+                                                >{{ data_get($block, 'headline') }}</h3>
+                                            @endif
+                                            @if(filled(data_get($block, 'content')))
+                                                <div class="project-text-column-content {{ data_get($block, 'content_line') ? 'has-line' : '' }}">
+                                                    {!! data_get($block, 'content') !!}
+                                                </div>
+                                            @endif
+                                            @if(filled(data_get($block, 'link_text')) && filled(data_get($block, 'link_url')))
+                                                <a href="{{ data_get($block, 'link_url') }}" class="project-text-column-link">
+                                                    {{ data_get($block, 'link_text') }}
+                                                    <svg width="32" height="10" viewBox="0 0 32 10" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                                                        <path d="M0 5H30M30 5L26 1M30 5L26 9" stroke="currentColor" stroke-width="1.2"/>
+                                                    </svg>
+                                                </a>
+                                            @endif
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
+                            @endforeach
                         </div>
-                    @elseif(data_get($block, 'type') === 'floating_gallery')
+                    @elseif(data_get($blockOrRow, 'type') === 'floating_gallery')
+                        @php $block = $blockOrRow; @endphp
                         @php
                             $fptop    = max(0, min(300, (int)data_get($block, 'padding_top', 0)));
                             $fpbottom = max(0, min(300, (int)data_get($block, 'padding_bottom', 0)));
@@ -242,7 +265,7 @@ $galleryImageSizes = [
                         </div>
                     @else
                         <div class="project-description-content">
-                            {!! data_get($block, 'content') !!}
+                            {!! data_get($blockOrRow, 'content') !!}
                         </div>
                     @endif
                 @endforeach

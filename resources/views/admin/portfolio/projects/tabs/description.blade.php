@@ -126,6 +126,10 @@
                                             <p class="text-muted small mb-2 fw-semibold">Bild (optional)</p>
                                             <div class="row g-3">
                                                 <div class="col-12">
+                                                    <input type="hidden"
+                                                        name="description_blocks[{{ $lang }}][{{ $blockIndex }}][image]"
+                                                        value="{{ data_get($block, 'image') }}"
+                                                    >
                                                     <x-admin.field.image
                                                         :name="'description_blocks['. $lang .'][' . $blockIndex . '][image_file]'"
                                                         :src="data_get($block, 'image')"
