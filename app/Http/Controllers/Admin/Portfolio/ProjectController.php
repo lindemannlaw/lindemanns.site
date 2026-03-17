@@ -363,8 +363,8 @@ class ProjectController extends Controller
                             'link_url'        => data_get($item, 'link_url') ?: null,
                             'image'           => $imgUrl,
                             'image_alignment' => $imgAlignment,
-                            'image_col_span'  => max(1, min(12, (int)data_get($item, 'image_col_span', 12))),
-                            'text_col_span'   => max(1, min(12, (int)data_get($item, 'text_col_span', 12))),
+                            'image_col_span'  => filled(data_get($item, 'image_col_span')) ? max(1, min(12, (int)data_get($item, 'image_col_span'))) : null,
+                            'text_col_span'   => filled(data_get($item, 'text_col_span')) ? max(1, min(12, (int)data_get($item, 'text_col_span'))) : null,
                         ];
                     }
 

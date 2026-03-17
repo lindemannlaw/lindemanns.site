@@ -159,8 +159,10 @@ $galleryImageSizes = [
                                     $imgUrl       = data_get($block, 'image');
                                     $hasImage     = filled($imgUrl);
                                     $imgAlignment = $hasImage ? (data_get($block, 'image_alignment', 'top')) : 'top';
-                                    $imgColSpan   = max(1, min(12, (int)data_get($block, 'image_col_span', 12)));
-                                    $txtColSpan   = max(1, min(12, (int)data_get($block, 'text_col_span', 12)));
+                                    $rawImgSpan   = data_get($block, 'image_col_span');
+                                    $rawTxtSpan   = data_get($block, 'text_col_span');
+                                    $imgColSpan   = filled($rawImgSpan) ? max(1, min(12, (int)$rawImgSpan)) : null;
+                                    $txtColSpan   = filled($rawTxtSpan) ? max(1, min(12, (int)$rawTxtSpan)) : null;
                                     $headlineColors = [
                                         'emerald-950' => 'var(--color-primary-brand-950-darkest)',
                                         'emerald-900' => 'var(--color-primary-brand-900-darker-silent)',
@@ -174,7 +176,7 @@ $galleryImageSizes = [
                                 <div class="project-text-column-item"
                                      style="--col-start: {{ $colStart }}; --col-span: {{ $colSpan }};">
                                     <div class="project-text-column-inner{{ $hasImage ? ' has-image image-' . $imgAlignment : '' }}"
-                                         style="{{ $hasImage ? '--img-col-span: ' . $imgColSpan . '; ' : '' }}--text-col-span: {{ $txtColSpan }};">
+                                         style="{{ $hasImage && $imgColSpan !== null ? '--img-col-span: ' . $imgColSpan . '; ' : '' }}{{ $txtColSpan !== null ? '--text-col-span: ' . $txtColSpan . ';' : '' }}">
                                         @if($hasImage)
                                             <img class="project-text-column-image" src="{{ $imgUrl }}" alt="{{ data_get($block, 'headline', '') }}" loading="lazy">
                                         @endif

@@ -13,7 +13,9 @@ export function ajaxWithUpdateFromView() {
         ajax(event, {
             form: form,
             successHandler: (response) => {
-                hideAllModals();
+                if (!form.hasAttribute('data-keep-modal-open')) {
+                    hideAllModals();
+                }
 
                 updateSection.innerHTML = response.data?.html;
             },

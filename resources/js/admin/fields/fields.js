@@ -4,6 +4,7 @@ import { previewImageFile } from "./previewImageFile.js";
 import { presetField } from "./presetField.js";
 import { dynamicFields } from "./dynamicFields.js";
 import { clearField } from "./clearField.js";
+import { paddingSelect } from "./paddingSelect.js";
 
 export function fields() {
     checkFilling();
@@ -12,4 +13,5 @@ export function fields() {
     presetField();
     dynamicFields();
     clearField();
+    paddingSelect();
 }

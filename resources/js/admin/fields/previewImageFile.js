@@ -63,11 +63,44 @@ export function previewImageFile() {
             }
         }
 
+        const isCompact = picture?.hasAttribute('data-pif-compact');
+
         field.addEventListener('change', () => {
             const file = field?.files[0];
             const url = getImageUrl(file);
-            const newClasses = image.dataset.pifViewClasses;
             const defaultProps = field.previewImageFileCurrentData;
+
+            if (isCompact) {
+                const placeholder = parent.querySelector('[data-pif-compact-placeholder]');
+                const changeLabel = parent.querySelector('[data-pif-compact-change]');
+
+                if (url) {
+                    image.src = url;
+                    image.classList.remove('d-none');
+                    placeholder?.classList.add('d-none');
+                    if (changeLabel) {
+                        changeLabel.classList.remove('d-none');
+                    } else if (placeholder) {
+                        const span = document.createElement('span');
+                        span.className = 'small text-muted';
+                        span.setAttribute('data-pif-compact-change', '');
+                        span.textContent = 'Ändern';
+                        placeholder.insertAdjacentElement('afterend', span);
+                    }
+                    picture.classList.remove('border-dashed', 'bg-light');
+                    picture.classList.add('border-solid', 'bg-white');
+                } else {
+                    image.src = '';
+                    image.classList.add('d-none');
+                    placeholder?.classList.remove('d-none');
+                    changeLabel?.classList.add('d-none');
+                    picture.classList.add('border-dashed', 'bg-light');
+                    picture.classList.remove('border-solid', 'bg-white');
+                }
+                return;
+            }
+
+            const newClasses = image.dataset.pifViewClasses;
 
             image.src = url ? url : defaultProps.url;
             image.setAttribute('class', url && newClasses ? newClasses : defaultProps.class);

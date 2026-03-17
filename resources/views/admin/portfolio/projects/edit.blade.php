@@ -10,6 +10,7 @@
             :method="'PATCH'"
             :isUpdateFromView="true"
             :updateIdSection="'projects-list'"
+            data-keep-modal-open
         >
             @include('admin.portfolio.projects.fields')
         </x-admin.control-form>
