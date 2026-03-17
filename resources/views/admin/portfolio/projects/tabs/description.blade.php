@@ -45,6 +45,7 @@
                                     <select class="form-select w-auto" data-block-type-select>
                                         <option value="text" {{ data_get($block, 'type', 'text') === 'text' ? 'selected' : null }}>Text</option>
                                         <option value="floating_gallery" {{ data_get($block, 'type') === 'floating_gallery' ? 'selected' : null }}>Floating Image Gallery</option>
+                                        <option value="text_column" {{ data_get($block, 'type') === 'text_column' ? 'selected' : null }}>Text Column</option>
                                     </select>
 
                                     <x-admin.button
@@ -79,6 +80,90 @@
                                             :height="300"
                                             :buttons="'blockquote|list|image|video'"
                                         />
+                                    </div>
+
+                                    <div data-block-type-panel="text_column" class="d-flex flex-column gap-3 {{ data_get($block, 'type') === 'text_column' ? null : 'd-none' }}">
+                                        <div class="row g-3">
+                                            <div class="col-12">
+                                                <x-admin.field.text
+                                                    :name="'description_blocks['. $lang .'][' . $blockIndex . '][headline]'"
+                                                    :value="data_get($block, 'headline')"
+                                                    :required="false"
+                                                    :placeholder="'Headline (optional)'"
+                                                />
+                                            </div>
+                                            <div class="col-12">
+                                                <div class="form-check form-switch">
+                                                    <input
+                                                        class="form-check-input"
+                                                        type="checkbox"
+                                                        value="1"
+                                                        name="description_blocks[{{ $lang }}][{{ $blockIndex }}][headline_line]"
+                                                        id="hl_line_{{ $lang }}_{{ $blockIndex }}"
+                                                        {{ data_get($block, 'headline_line') ? 'checked' : '' }}
+                                                    >
+                                                    <label class="form-check-label" for="hl_line_{{ $lang }}_{{ $blockIndex }}">
+                                                        Linie vor Headline anzeigen
+                                                    </label>
+                                                </div>
+                                            </div>
+                                            <div class="col-12">
+                                                <x-admin.field.wysiwyg
+                                                    :name="'description_blocks['. $lang .'][' . $blockIndex . '][content]'"
+                                                    :placeholder="'Text (optional)'"
+                                                    :value="data_get($block, 'content')"
+                                                    :height="200"
+                                                    :buttons="'bold|italic|link'"
+                                                />
+                                            </div>
+                                            <div class="col-12">
+                                                <div class="form-check form-switch">
+                                                    <input
+                                                        class="form-check-input"
+                                                        type="checkbox"
+                                                        value="1"
+                                                        name="description_blocks[{{ $lang }}][{{ $blockIndex }}][content_line]"
+                                                        id="content_line_{{ $lang }}_{{ $blockIndex }}"
+                                                        {{ data_get($block, 'content_line') ? 'checked' : '' }}
+                                                    >
+                                                    <label class="form-check-label" for="content_line_{{ $lang }}_{{ $blockIndex }}">
+                                                        Linie vor Text anzeigen
+                                                    </label>
+                                                </div>
+                                            </div>
+                                            <div class="col-12 col-lg-6">
+                                                <x-admin.field.text
+                                                    :name="'description_blocks['. $lang .'][' . $blockIndex . '][link_text]'"
+                                                    :value="data_get($block, 'link_text')"
+                                                    :required="false"
+                                                    :placeholder="'Link Text (optional, z.B. SEE DETAILS)'"
+                                                />
+                                            </div>
+                                            <div class="col-12 col-lg-6">
+                                                <x-admin.field.text
+                                                    :name="'description_blocks['. $lang .'][' . $blockIndex . '][link_url]'"
+                                                    :value="data_get($block, 'link_url')"
+                                                    :required="false"
+                                                    :placeholder="'Link URL (optional, z.B. /about)'"
+                                                />
+                                            </div>
+                                            <div class="col-12 col-lg-6">
+                                                <x-admin.field.number
+                                                    :name="'description_blocks['. $lang .'][' . $blockIndex . '][col_span]'"
+                                                    :value="data_get($block, 'col_span', 12)"
+                                                    :placeholder="'Columns (1-12)'"
+                                                    :fieldAttrs="'min=1 max=12'"
+                                                />
+                                            </div>
+                                            <div class="col-12 col-lg-6">
+                                                <x-admin.field.number
+                                                    :name="'description_blocks['. $lang .'][' . $blockIndex . '][col_start]'"
+                                                    :value="data_get($block, 'col_start', 1)"
+                                                    :placeholder="'Start column (1-12)'"
+                                                    :fieldAttrs="'min=1 max=12'"
+                                                />
+                                            </div>
+                                        </div>
                                     </div>
 
                                     <div data-block-type-panel="floating_gallery" class="d-flex flex-column gap-3 {{ data_get($block, 'type') === 'floating_gallery' ? null : 'd-none' }}">
@@ -188,6 +273,7 @@
                             <select class="form-select w-auto" data-block-type-select>
                                 <option value="text" selected>Text</option>
                                 <option value="floating_gallery">Floating Image Gallery</option>
+                                <option value="text_column">Text Column</option>
                             </select>
                             <x-admin.button
                                 data-block-add-after
@@ -231,6 +317,70 @@
                                     :title="'Add image'"
                                     :iconName="'plus-circle'"
                                 />
+                            </div>
+
+                            <div data-block-type-panel="text_column" class="d-flex flex-column gap-3 d-none">
+                                <div class="row g-3">
+                                    <div class="col-12">
+                                        <x-admin.field.text
+                                            :name="'description_blocks['. $lang .'][__block__][headline]'"
+                                            :required="false"
+                                            :placeholder="'Headline (optional)'"
+                                        />
+                                    </div>
+                                    <div class="col-12">
+                                        <div class="form-check form-switch">
+                                            <input class="form-check-input" type="checkbox" value="1"
+                                                name="description_blocks[{{ $lang }}][__block__][headline_line]">
+                                            <label class="form-check-label">Linie vor Headline anzeigen</label>
+                                        </div>
+                                    </div>
+                                    <div class="col-12">
+                                        <x-admin.field.wysiwyg
+                                            :name="'description_blocks['. $lang .'][__block__][content]'"
+                                            :placeholder="'Text (optional)'"
+                                            :height="200"
+                                            :buttons="'bold|italic|link'"
+                                        />
+                                    </div>
+                                    <div class="col-12">
+                                        <div class="form-check form-switch">
+                                            <input class="form-check-input" type="checkbox" value="1"
+                                                name="description_blocks[{{ $lang }}][__block__][content_line]">
+                                            <label class="form-check-label">Linie vor Text anzeigen</label>
+                                        </div>
+                                    </div>
+                                    <div class="col-12 col-lg-6">
+                                        <x-admin.field.text
+                                            :name="'description_blocks['. $lang .'][__block__][link_text]'"
+                                            :required="false"
+                                            :placeholder="'Link Text (optional)'"
+                                        />
+                                    </div>
+                                    <div class="col-12 col-lg-6">
+                                        <x-admin.field.text
+                                            :name="'description_blocks['. $lang .'][__block__][link_url]'"
+                                            :required="false"
+                                            :placeholder="'Link URL (optional)'"
+                                        />
+                                    </div>
+                                    <div class="col-12 col-lg-6">
+                                        <x-admin.field.number
+                                            :name="'description_blocks['. $lang .'][__block__][col_span]'"
+                                            :value="12"
+                                            :placeholder="'Columns (1-12)'"
+                                            :fieldAttrs="'min=1 max=12'"
+                                        />
+                                    </div>
+                                    <div class="col-12 col-lg-6">
+                                        <x-admin.field.number
+                                            :name="'description_blocks['. $lang .'][__block__][col_start]'"
+                                            :value="1"
+                                            :placeholder="'Start column (1-12)'"
+                                            :fieldAttrs="'min=1 max=12'"
+                                        />
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>

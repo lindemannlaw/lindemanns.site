@@ -144,7 +144,34 @@ $galleryImageSizes = [
                 @endphp
 
                 @foreach($descriptionBlocks as $block)
-                    @if(data_get($block, 'type') === 'floating_gallery')
+                    @if(data_get($block, 'type') === 'text_column')
+                        @php
+                            $colStart = max(1, min(12, (int)data_get($block, 'col_start', 1)));
+                            $colSpan  = max(1, min(12, (int)data_get($block, 'col_span', 12)));
+                        @endphp
+                        <div class="project-text-columns">
+                            <div class="project-text-column-item" style="--col-start: {{ $colStart }}; --col-span: {{ $colSpan }};">
+                                @if(filled(data_get($block, 'headline')))
+                                    <div class="project-text-column-headline {{ data_get($block, 'headline_line') ? 'has-line' : '' }}">
+                                        <h3>{{ data_get($block, 'headline') }}</h3>
+                                    </div>
+                                @endif
+                                @if(filled(data_get($block, 'content')))
+                                    <div class="project-text-column-content {{ data_get($block, 'content_line') ? 'has-line' : '' }}">
+                                        {!! data_get($block, 'content') !!}
+                                    </div>
+                                @endif
+                                @if(filled(data_get($block, 'link_text')) && filled(data_get($block, 'link_url')))
+                                    <a href="{{ data_get($block, 'link_url') }}" class="project-text-column-link">
+                                        {{ data_get($block, 'link_text') }}
+                                        <svg width="32" height="10" viewBox="0 0 32 10" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                                            <path d="M0 5H30M30 5L26 1M30 5L26 9" stroke="currentColor" stroke-width="1.2"/>
+                                        </svg>
+                                    </a>
+                                @endif
+                            </div>
+                        </div>
+                    @elseif(data_get($block, 'type') === 'floating_gallery')
                         <div class="project-floating-gallery">
                             @foreach((data_get($block, 'items') ?: []) as $item)
                                 @php

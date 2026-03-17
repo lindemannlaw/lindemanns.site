@@ -55,7 +55,7 @@ class UpdateRequest extends FormRequest
             $rules['short_description.' . $locale] = ['required', 'string'];
             $rules['description.' . $locale] = ['nullable', 'string'];
             $rules['description_blocks.' . $locale] = ['required', 'array', 'min:1'];
-            $rules['description_blocks.' . $locale . '.*.type'] = ['required', 'string', 'in:text,floating_gallery'];
+            $rules['description_blocks.' . $locale . '.*.type'] = ['required', 'string', 'in:text,floating_gallery,text_column'];
             $rules['description_blocks.' . $locale . '.*.content'] = ['nullable', 'string'];
             $rules['description_blocks.' . $locale . '.*.items'] = ['nullable', 'array'];
             $rules['description_blocks.' . $locale . '.*.items.*.headline'] = ['nullable', 'string', 'max:255'];
@@ -64,6 +64,13 @@ class UpdateRequest extends FormRequest
             $rules['description_blocks.' . $locale . '.*.items.*.col_start'] = ['nullable', 'integer', 'min:1', 'max:12'];
             $rules['description_blocks.' . $locale . '.*.items.*.image'] = ['nullable', 'string'];
             $rules['description_blocks.' . $locale . '.*.items.*.image_file'] = ['nullable', 'image', 'mimes:jpg,png,webp', 'max:20480'];
+            $rules['description_blocks.' . $locale . '.*.headline'] = ['nullable', 'string', 'max:255'];
+            $rules['description_blocks.' . $locale . '.*.headline_line'] = ['nullable'];
+            $rules['description_blocks.' . $locale . '.*.content_line'] = ['nullable'];
+            $rules['description_blocks.' . $locale . '.*.link_text'] = ['nullable', 'string', 'max:255'];
+            $rules['description_blocks.' . $locale . '.*.link_url'] = ['nullable', 'string', 'max:500'];
+            $rules['description_blocks.' . $locale . '.*.col_span'] = ['nullable', 'integer', 'min:1', 'max:12'];
+            $rules['description_blocks.' . $locale . '.*.col_start'] = ['nullable', 'integer', 'min:1', 'max:12'];
             $rules['location.' . $locale] = ['required', 'string', 'max:255'];
             $rules['tags.' . $locale . '.*'] = ['nullable', 'string', 'max:255'];
             $rules['property_details.' . $locale . '.*'] = ['nullable', 'string', 'max:255'];

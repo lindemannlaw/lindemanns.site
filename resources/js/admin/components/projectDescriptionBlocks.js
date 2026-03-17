@@ -123,7 +123,7 @@ function initBuilder(builder) {
 
         setBlockType(block, typeSelect.value);
 
-        if (typeSelect.value === 'text') {
+        if (typeSelect.value === 'text' || typeSelect.value === 'text_column') {
             ensureTextEditorForBlock(block);
         }
 
@@ -212,6 +212,7 @@ function setBlockType(block, type) {
     const typeInput = block.querySelector('[data-block-type-input]');
     const textPanel = block.querySelector('[data-block-type-panel="text"]');
     const galleryPanel = block.querySelector('[data-block-type-panel="floating_gallery"]');
+    const textColumnPanel = block.querySelector('[data-block-type-panel="text_column"]');
 
     if (typeInput) {
         typeInput.value = type;
@@ -219,9 +220,11 @@ function setBlockType(block, type) {
 
     textPanel?.classList.toggle('d-none', type !== 'text');
     galleryPanel?.classList.toggle('d-none', type !== 'floating_gallery');
+    textColumnPanel?.classList.toggle('d-none', type !== 'text_column');
 
     togglePanelRequired(textPanel, type === 'text');
     togglePanelRequired(galleryPanel, type === 'floating_gallery');
+    togglePanelRequired(textColumnPanel, type === 'text_column');
 }
 
 function ensureTextEditorForBlock(block) {
@@ -315,7 +318,7 @@ function updateBlockLabel(block, blockIndex) {
     if (!labelEl) return;
 
     const type = block.querySelector('[data-block-type-input]')?.value || 'text';
-    const typeLabel = type === 'floating_gallery' ? 'Floating Gallery' : 'Content';
+    const typeLabel = type === 'floating_gallery' ? 'Floating Gallery' : type === 'text_column' ? 'Text Column' : 'Content';
 
     labelEl.textContent = `Block ${blockIndex + 1} - ${typeLabel}`;
 }

@@ -305,7 +305,7 @@ class ProjectController extends Controller
             foreach ($localeBlocks as $blockIndex => $block) {
                 $type = data_get($block, 'type');
 
-                if (!in_array($type, ['text', 'floating_gallery'], true)) {
+                if (!in_array($type, ['text', 'floating_gallery', 'text_column'], true)) {
                     continue;
                 }
 
@@ -320,6 +320,28 @@ class ProjectController extends Controller
                     if (filled(trim(strip_tags($content)))) {
                         $legacyDescriptionParts[] = $content;
                     }
+
+                    continue;
+                }
+
+                if ($type === 'text_column') {
+                    $colStart = max(1, min(12, (int)data_get($block, 'col_start', 1)));
+                    $colSpan  = max(1, min(12, (int)data_get($block, 'col_span', 12)));
+                    if (($colStart + $colSpan - 1) > 12) {
+                        $colSpan = 12 - $colStart + 1;
+                    }
+
+                    $preparedLocaleBlocks[] = [
+                        'type'          => 'text_column',
+                        'headline'      => data_get($block, 'headline') ?: null,
+                        'headline_line' => (bool)data_get($block, 'headline_line', false),
+                        'content'       => (string)data_get($block, 'content', ''),
+                        'content_line'  => (bool)data_get($block, 'content_line', false),
+                        'link_text'     => data_get($block, 'link_text') ?: null,
+                        'link_url'      => data_get($block, 'link_url') ?: null,
+                        'col_start'     => $colStart,
+                        'col_span'      => $colSpan,
+                    ];
 
                     continue;
                 }
