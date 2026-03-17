@@ -426,7 +426,8 @@
 
             &.font-nicevar {
                 font-family: var(--font-primary);
-                font-variation-settings: var(--font-primary-settings);
+                font-variation-settings: var(--font-primary-settings-headline);
+
                 font-weight: 200;
             }
 

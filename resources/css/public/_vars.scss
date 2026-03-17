@@ -49,6 +49,9 @@ $colors: (
     'Grad' 0,
     'opsz' 50;
 
+    --font-primary-settings-headline: 'opsz' 32, 'MONO' 1;
+
+
     --color-interaction-primary-default: var(--color-primary-brand-800-dark);
     --color-interaction-primary-hover: var(--color-primary-brand-700-strongest);
     --color-interaction-primary-active: var(--color-primary-brand-800-dark);
