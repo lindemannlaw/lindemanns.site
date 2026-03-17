@@ -26,6 +26,7 @@
             :isUpdateFromView="true"
             :updateIdSection="'projects-list'"
             data-keep-modal-open
+            data-modal-refresh-url="{{ route('admin.portfolio.project.edit', $project->id) }}"
         >
             @include('admin.portfolio.projects.fields')
         </x-admin.control-form>

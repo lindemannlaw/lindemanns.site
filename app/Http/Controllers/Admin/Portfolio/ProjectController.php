@@ -100,10 +100,15 @@ class ProjectController extends Controller
 
     public function edit(Request $request, Project $project): View|JsonResponse|string {
         if ($request->ajax()) {
-            return view('admin.portfolio.projects.edit', compact('project'))->render();
-        }
+            $html = view('admin.portfolio.projects.edit', compact('project'))->render();
 
-        // return view('admin.portfolio.projects.show-edit', compact('project'));
+            // When expecting JSON (modal refresh after save), wrap in JSON envelope
+            if ($request->expectsJson()) {
+                return response()->json(['html' => $html]);
+            }
+
+            return $html;
+        }
 
         abort(404);
     }
