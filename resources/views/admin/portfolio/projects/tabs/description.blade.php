@@ -284,11 +284,10 @@
                                                     </div>
                                                     <x-admin.field.image
                                                         :name="'description_blocks['. $lang .'][' . $blockIndex . '][items][' . $itemIndex . '][image_file]'"
-                                                        :placeholder="'Image'"
+                                                        :placeholder="'Bild hinzufügen'"
                                                         :src="data_get($item, 'image')"
                                                         :required="false"
-                                                        :ratio="'4x3'"
-                                                        :fit="'contain'"
+                                                        :compact="true"
                                                     />
                                                     <input type="hidden" name="description_blocks[{{ $lang }}][{{ $blockIndex }}][items][{{ $itemIndex }}][image]" value="{{ data_get($item, 'image') }}" data-gallery-item-image-hidden>
                                                     <div class="row g-2">
@@ -393,7 +392,7 @@
                             <x-admin.button data-gallery-item-add-after class="p-2 ms-auto" :btn="'btn-outline-success'" :iconName="'plus-circle'" />
                             <x-admin.button data-gallery-item-remove class="p-2" :btn="'btn-outline-danger'" :iconName="'dash-circle'" />
                         </div>
-                        <x-admin.field.image :name="'description_blocks['. $lang .'][__block__][items][__item__][image_file]'" :placeholder="'Image'" :required="false" :ratio="'4x3'" :fit="'contain'" />
+                        <x-admin.field.image :name="'description_blocks['. $lang .'][__block__][items][__item__][image_file]'" :placeholder="'Bild hinzufügen'" :required="false" :compact="true" />
                         <input type="hidden" name="description_blocks[{{ $lang }}][__block__][items][__item__][image]" value="" data-gallery-item-image-hidden>
                         <div class="row g-2">
                             <div class="col-12 col-lg-6">
