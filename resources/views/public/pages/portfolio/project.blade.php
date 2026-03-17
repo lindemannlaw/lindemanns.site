@@ -143,34 +143,19 @@ $galleryImageSizes = [
                     $hiddenLightboxImageUrls = array_values(array_diff($lightboxImageUrls, $floatingImageUrls));
                 @endphp
 
-                @php
-                    // Group consecutive text_column blocks into rows so they share one 12-col grid
-                    $blockGroups = [];
-                    $currentRow  = null;
-                    foreach ($descriptionBlocks as $b) {
-                        if (data_get($b, 'type') === 'text_column') {
-                            if ($currentRow === null) {
-                                $currentRow = ['type' => '_text_column_row', 'items' => []];
-                            }
-                            $currentRow['items'][] = $b;
-                        } else {
-                            if ($currentRow !== null) { $blockGroups[] = $currentRow; $currentRow = null; }
-                            $blockGroups[] = $b;
-                        }
-                    }
-                    if ($currentRow !== null) { $blockGroups[] = $currentRow; }
-                @endphp
-
-                @foreach($blockGroups as $blockOrRow)
-                    @if(data_get($blockOrRow, 'type') === '_text_column_row')
-                        @php $rowItems = data_get($blockOrRow, 'items', []); @endphp
-                        <div class="project-text-columns">
+                @foreach($descriptionBlocks as $blockOrRow)
+                    @if(data_get($blockOrRow, 'type') === 'text_column_row')
+                        @php
+                            $rowPtop    = max(0, min(300, (int)data_get($blockOrRow, 'padding_top', 0)));
+                            $rowPbottom = max(0, min(300, (int)data_get($blockOrRow, 'padding_bottom', 0)));
+                            $rowItems   = data_get($blockOrRow, 'items', []);
+                        @endphp
+                        <div class="project-text-columns"
+                             style="{{ $rowPtop > 0 ? 'padding-top:' . $rowPtop . 'px;' : '' }}{{ $rowPbottom > 0 ? 'padding-bottom:' . $rowPbottom . 'px;' : '' }}">
                             @foreach($rowItems as $block)
                                 @php
                                     $colStart     = max(1, min(12, (int)data_get($block, 'col_start', 1)));
                                     $colSpan      = max(1, min(12, (int)data_get($block, 'col_span', 12)));
-                                    $ptop         = max(0, min(300, (int)data_get($block, 'padding_top', 0)));
-                                    $pbottom      = max(0, min(300, (int)data_get($block, 'padding_bottom', 0)));
                                     $imgUrl       = data_get($block, 'image');
                                     $hasImage     = filled($imgUrl);
                                     $imgAlignment = $hasImage ? (data_get($block, 'image_alignment', 'top')) : 'top';
@@ -187,7 +172,7 @@ $galleryImageSizes = [
                                     $hFont  = data_get($block, 'headline_font', 'pangea') === 'nicevar' ? 'font-nicevar' : '';
                                 @endphp
                                 <div class="project-text-column-item"
-                                     style="--col-start: {{ $colStart }}; --col-span: {{ $colSpan }};{{ $ptop > 0 ? ' padding-top:' . $ptop . 'px;' : '' }}{{ $pbottom > 0 ? ' padding-bottom:' . $pbottom . 'px;' : '' }}">
+                                     style="--col-start: {{ $colStart }}; --col-span: {{ $colSpan }};">
                                     <div class="project-text-column-inner{{ $hasImage ? ' has-image image-' . $imgAlignment : '' }}"
                                          style="{{ $hasImage ? '--img-col-span: ' . $imgColSpan . '; ' : '' }}--text-col-span: {{ $txtColSpan }};">
                                         @if($hasImage)

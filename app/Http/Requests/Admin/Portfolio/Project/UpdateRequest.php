@@ -55,31 +55,29 @@ class UpdateRequest extends FormRequest
             $rules['short_description.' . $locale] = ['required', 'string'];
             $rules['description.' . $locale] = ['nullable', 'string'];
             $rules['description_blocks.' . $locale] = ['required', 'array', 'min:1'];
-            $rules['description_blocks.' . $locale . '.*.type'] = ['required', 'string', 'in:text,floating_gallery,text_column'];
+            $rules['description_blocks.' . $locale . '.*.type'] = ['required', 'string', 'in:text,floating_gallery,text_column_row'];
             $rules['description_blocks.' . $locale . '.*.content'] = ['nullable', 'string'];
+            $rules['description_blocks.' . $locale . '.*.padding_top'] = ['nullable', 'integer', 'min:0', 'max:300'];
+            $rules['description_blocks.' . $locale . '.*.padding_bottom'] = ['nullable', 'integer', 'min:0', 'max:300'];
+            // floating_gallery items
             $rules['description_blocks.' . $locale . '.*.items'] = ['nullable', 'array'];
             $rules['description_blocks.' . $locale . '.*.items.*.headline'] = ['nullable', 'string', 'max:255'];
             $rules['description_blocks.' . $locale . '.*.items.*.subhead'] = ['nullable', 'string', 'max:255'];
             $rules['description_blocks.' . $locale . '.*.items.*.col_span'] = ['nullable', 'integer', 'min:1', 'max:12'];
             $rules['description_blocks.' . $locale . '.*.items.*.col_start'] = ['nullable', 'integer', 'min:1', 'max:12'];
-            $rules['description_blocks.' . $locale . '.*.items.*.image'] = ['nullable', 'string'];
-            $rules['description_blocks.' . $locale . '.*.items.*.image_file'] = ['nullable', 'image', 'mimes:jpg,png,webp', 'max:20480'];
-            $rules['description_blocks.' . $locale . '.*.headline'] = ['nullable', 'string', 'max:255'];
-            $rules['description_blocks.' . $locale . '.*.headline_color'] = ['nullable', 'string', 'in:emerald-950,emerald-900,emerald-800,primary,gold-bright'];
-            $rules['description_blocks.' . $locale . '.*.headline_font'] = ['nullable', 'string', 'in:pangea,nicevar'];
-            $rules['description_blocks.' . $locale . '.*.padding_top'] = ['nullable', 'integer', 'min:0', 'max:300'];
-            $rules['description_blocks.' . $locale . '.*.padding_bottom'] = ['nullable', 'integer', 'min:0', 'max:300'];
-            $rules['description_blocks.' . $locale . '.*.image'] = ['nullable', 'string', 'max:2048'];
-            $rules['description_blocks.' . $locale . '.*.image_file'] = ['nullable', 'file', 'mimes:jpg,jpeg,png,webp,gif', 'max:10240'];
-            $rules['description_blocks.' . $locale . '.*.image_alignment'] = ['nullable', 'string', 'in:top,left,right'];
-            $rules['description_blocks.' . $locale . '.*.image_col_span'] = ['nullable', 'integer', 'min:1', 'max:12'];
-            $rules['description_blocks.' . $locale . '.*.text_col_span'] = ['nullable', 'integer', 'min:1', 'max:12'];
-            $rules['description_blocks.' . $locale . '.*.headline_line'] = ['nullable'];
-            $rules['description_blocks.' . $locale . '.*.content_line'] = ['nullable'];
-            $rules['description_blocks.' . $locale . '.*.link_text'] = ['nullable', 'string', 'max:255'];
-            $rules['description_blocks.' . $locale . '.*.link_url'] = ['nullable', 'string', 'max:500'];
-            $rules['description_blocks.' . $locale . '.*.col_span'] = ['nullable', 'integer', 'min:1', 'max:12'];
-            $rules['description_blocks.' . $locale . '.*.col_start'] = ['nullable', 'integer', 'min:1', 'max:12'];
+            $rules['description_blocks.' . $locale . '.*.items.*.image'] = ['nullable', 'string', 'max:2048'];
+            $rules['description_blocks.' . $locale . '.*.items.*.image_file'] = ['nullable', 'file', 'mimes:jpg,jpeg,png,webp,gif', 'max:10240'];
+            // text_column_row item fields
+            $rules['description_blocks.' . $locale . '.*.items.*.headline_color'] = ['nullable', 'string', 'in:emerald-950,emerald-900,emerald-800,primary,gold-bright'];
+            $rules['description_blocks.' . $locale . '.*.items.*.headline_font'] = ['nullable', 'string', 'in:pangea,nicevar'];
+            $rules['description_blocks.' . $locale . '.*.items.*.headline_line'] = ['nullable'];
+            $rules['description_blocks.' . $locale . '.*.items.*.content'] = ['nullable', 'string'];
+            $rules['description_blocks.' . $locale . '.*.items.*.content_line'] = ['nullable'];
+            $rules['description_blocks.' . $locale . '.*.items.*.link_text'] = ['nullable', 'string', 'max:255'];
+            $rules['description_blocks.' . $locale . '.*.items.*.link_url'] = ['nullable', 'string', 'max:500'];
+            $rules['description_blocks.' . $locale . '.*.items.*.image_alignment'] = ['nullable', 'string', 'in:top,left,right'];
+            $rules['description_blocks.' . $locale . '.*.items.*.image_col_span'] = ['nullable', 'integer', 'min:1', 'max:12'];
+            $rules['description_blocks.' . $locale . '.*.items.*.text_col_span'] = ['nullable', 'integer', 'min:1', 'max:12'];
             $rules['location.' . $locale] = ['required', 'string', 'max:255'];
             $rules['tags.' . $locale . '.*'] = ['nullable', 'string', 'max:255'];
             $rules['property_details.' . $locale . '.*'] = ['nullable', 'string', 'max:255'];
@@ -108,7 +106,9 @@ class UpdateRequest extends FormRequest
                         );
                     }
 
-                    if (($block['type'] ?? null) !== 'floating_gallery') {
+                    $blockType = $block['type'] ?? null;
+
+                    if (!in_array($blockType, ['floating_gallery', 'text_column_row'])) {
                         continue;
                     }
 

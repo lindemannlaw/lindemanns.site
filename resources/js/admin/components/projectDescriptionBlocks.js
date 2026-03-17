@@ -32,6 +32,11 @@ function initBuilder(builder) {
         const addGalleryItemButton = event.target.closest('[data-gallery-item-add]');
         const addGalleryItemAfterButton = event.target.closest('[data-gallery-item-add-after]');
         const removeGalleryItemButton = event.target.closest('[data-gallery-item-remove]');
+
+        const addTcItemButton = event.target.closest('[data-tc-item-add]');
+        const addTcItemAfterButton = event.target.closest('[data-tc-item-add-after]');
+        const removeTcItemButton = event.target.closest('[data-tc-item-remove]');
+
         const toggleBlockButton = event.target.closest('[data-block-toggle]');
 
         if (toggleBlockButton) {
@@ -40,7 +45,7 @@ function initBuilder(builder) {
 
             setBlockCollapsed(block, isExpanded);
             if (isExpanded === false) {
-                ensureTextEditorForBlock(block);
+                ensureWysiwygForBlock(block);
             }
             return;
         }
@@ -50,7 +55,7 @@ function initBuilder(builder) {
             blocksWrapper.appendChild(newBlock);
             reindexBuilder(builder);
             fields();
-            ensureTextEditorForBlock(newBlock);
+            ensureWysiwygForBlock(newBlock);
             return;
         }
 
@@ -62,7 +67,7 @@ function initBuilder(builder) {
             currentBlock.insertAdjacentElement('afterend', newBlock);
             reindexBuilder(builder);
             fields();
-            ensureTextEditorForBlock(newBlock);
+            ensureWysiwygForBlock(newBlock);
             return;
         }
 
@@ -111,6 +116,45 @@ function initBuilder(builder) {
 
             currentItem.remove();
             reindexBuilder(builder);
+            return;
+        }
+
+        if (addTcItemButton) {
+            const currentBlock = addTcItemButton.closest('[data-block]');
+            if (!currentBlock) return;
+
+            const itemsWrapper = currentBlock.querySelector('[data-tc-items-wrapper]');
+            if (!itemsWrapper) return;
+
+            itemsWrapper.appendChild(createTcItem(builder));
+            reindexBuilder(builder);
+            fields();
+            wysiwyg();
+            return;
+        }
+
+        if (addTcItemAfterButton) {
+            const currentItem = addTcItemAfterButton.closest('[data-tc-item]');
+            if (!currentItem) return;
+
+            currentItem.insertAdjacentElement('afterend', createTcItem(builder));
+            reindexBuilder(builder);
+            fields();
+            wysiwyg();
+            return;
+        }
+
+        if (removeTcItemButton) {
+            const currentItem = removeTcItemButton.closest('[data-tc-item]');
+            const itemsWrapper = removeTcItemButton.closest('[data-tc-items-wrapper]');
+            if (!currentItem || !itemsWrapper) return;
+
+            const allItems = itemsWrapper.querySelectorAll('[data-tc-item]');
+            if (allItems.length <= 1) return;
+
+            currentItem.remove();
+            reindexBuilder(builder);
+            return;
         }
     });
 
@@ -123,8 +167,8 @@ function initBuilder(builder) {
 
         setBlockType(block, typeSelect.value);
 
-        if (typeSelect.value === 'text' || typeSelect.value === 'text_column') {
-            ensureTextEditorForBlock(block);
+        if (typeSelect.value === 'text') {
+            ensureWysiwygForBlock(block);
         }
 
         if (typeSelect.value === 'floating_gallery') {
@@ -132,6 +176,15 @@ function initBuilder(builder) {
 
             if (itemsWrapper && itemsWrapper.querySelectorAll('[data-gallery-item]').length === 0) {
                 itemsWrapper.appendChild(createGalleryItem(builder));
+                fields();
+            }
+        }
+
+        if (typeSelect.value === 'text_column_row') {
+            const itemsWrapper = block.querySelector('[data-tc-items-wrapper]');
+
+            if (itemsWrapper && itemsWrapper.querySelectorAll('[data-tc-item]').length === 0) {
+                itemsWrapper.appendChild(createTcItem(builder));
                 fields();
             }
         }
@@ -145,20 +198,39 @@ function initBuilder(builder) {
         setBlockType(block, type);
         setBlockCollapsed(block, true);
 
-        const itemsWrapper = block.querySelector('[data-gallery-items-wrapper]');
-
-        if (itemsWrapper && !itemsWrapper.dataset.sortableInited) {
-            Sortable.create(itemsWrapper, {
-                draggable: '[data-gallery-item]',
-                handle: '[data-gallery-item-move]',
-                onEnd: () => reindexBuilder(builder),
-            });
-
-            itemsWrapper.dataset.sortableInited = 'true';
-        }
+        initGalleryItemsSortable(block, builder);
+        initTcItemsSortable(block, builder);
     });
 
     reindexBuilder(builder);
+}
+
+function initGalleryItemsSortable(block, builder) {
+    const itemsWrapper = block.querySelector('[data-gallery-items-wrapper]');
+
+    if (itemsWrapper && !itemsWrapper.dataset.sortableInited) {
+        Sortable.create(itemsWrapper, {
+            draggable: '[data-gallery-item]',
+            handle: '[data-gallery-item-move]',
+            onEnd: () => reindexBuilder(builder),
+        });
+
+        itemsWrapper.dataset.sortableInited = 'true';
+    }
+}
+
+function initTcItemsSortable(block, builder) {
+    const itemsWrapper = block.querySelector('[data-tc-items-wrapper]');
+
+    if (itemsWrapper && !itemsWrapper.dataset.sortableInited) {
+        Sortable.create(itemsWrapper, {
+            draggable: '[data-tc-item]',
+            handle: '[data-tc-item-move]',
+            onEnd: () => reindexBuilder(builder),
+        });
+
+        itemsWrapper.dataset.sortableInited = 'true';
+    }
 }
 
 function createBlock(builder, type = 'text') {
@@ -176,22 +248,22 @@ function createBlock(builder, type = 'text') {
     setBlockType(block, type);
     setBlockCollapsed(block, true);
 
-    const itemsWrapper = block.querySelector('[data-gallery-items-wrapper]');
-    if (itemsWrapper && !itemsWrapper.dataset.sortableInited) {
-        Sortable.create(itemsWrapper, {
-            draggable: '[data-gallery-item]',
-            handle: '[data-gallery-item-move]',
-            onEnd: () => reindexBuilder(builder),
-        });
-
-        itemsWrapper.dataset.sortableInited = 'true';
-    }
+    initGalleryItemsSortable(block, builder);
+    initTcItemsSortable(block, builder);
 
     return block;
 }
 
 function createGalleryItem(builder) {
     const itemTemplate = getTemplateFromPane(builder, '[data-gallery-item-template]');
+
+    if (!itemTemplate) return document.createElement('div');
+
+    return itemTemplate.content.firstElementChild.cloneNode(true);
+}
+
+function createTcItem(builder) {
+    const itemTemplate = getTemplateFromPane(builder, '[data-tc-item-template]');
 
     if (!itemTemplate) return document.createElement('div');
 
@@ -212,7 +284,7 @@ function setBlockType(block, type) {
     const typeInput = block.querySelector('[data-block-type-input]');
     const textPanel = block.querySelector('[data-block-type-panel="text"]');
     const galleryPanel = block.querySelector('[data-block-type-panel="floating_gallery"]');
-    const textColumnPanel = block.querySelector('[data-block-type-panel="text_column"]');
+    const tcRowPanel = block.querySelector('[data-block-type-panel="text_column_row"]');
 
     if (typeInput) {
         typeInput.value = type;
@@ -220,23 +292,18 @@ function setBlockType(block, type) {
 
     textPanel?.classList.toggle('d-none', type !== 'text');
     galleryPanel?.classList.toggle('d-none', type !== 'floating_gallery');
-    textColumnPanel?.classList.toggle('d-none', type !== 'text_column');
+    tcRowPanel?.classList.toggle('d-none', type !== 'text_column_row');
 
     togglePanelRequired(textPanel, type === 'text');
     togglePanelRequired(galleryPanel, type === 'floating_gallery');
-    togglePanelRequired(textColumnPanel, type === 'text_column');
+    togglePanelRequired(tcRowPanel, type === 'text_column_row');
 }
 
-function ensureTextEditorForBlock(block) {
+function ensureWysiwygForBlock(block) {
     const body = block.querySelector('[data-block-body]');
-    const textPanel = block.querySelector('[data-block-type-panel="text"]');
-    const textarea = textPanel?.querySelector('[data-wysiwyg]');
+    if (body?.classList.contains('d-none')) return;
 
-    if (!textarea || body?.classList.contains('d-none')) return;
-
-    if (!textarea.wysiwygInited) {
-        wysiwyg();
-    }
+    wysiwyg();
 }
 
 function setBlockCollapsed(block, collapsed) {
@@ -283,7 +350,6 @@ function reindexBuilder(builder) {
         updateBlockLabel(block, blockIndex);
 
         const blockFields = block.querySelectorAll('[name]');
-        const galleryItems = block.querySelectorAll('[data-gallery-items-wrapper] > [data-gallery-item]');
 
         blockFields.forEach((field) => {
             const originalName = field.getAttribute('name');
@@ -297,7 +363,27 @@ function reindexBuilder(builder) {
             field.setAttribute('name', blockName);
         });
 
+        // Reindex gallery items
+        const galleryItems = block.querySelectorAll('[data-gallery-items-wrapper] > [data-gallery-item]');
+
         galleryItems.forEach((item, itemIndex) => {
+            const itemFields = item.querySelectorAll('[name]');
+
+            itemFields.forEach((field) => {
+                const itemName = field.getAttribute('name');
+                if (!itemName) return;
+
+                field.setAttribute(
+                    'name',
+                    itemName.replace(/\[items\]\[(?:\d+|__item__)\]/g, `[items][${itemIndex}]`)
+                );
+            });
+        });
+
+        // Reindex text_column_row items
+        const tcItems = block.querySelectorAll('[data-tc-items-wrapper] > [data-tc-item]');
+
+        tcItems.forEach((item, itemIndex) => {
             const itemFields = item.querySelectorAll('[name]');
 
             itemFields.forEach((field) => {
@@ -318,7 +404,9 @@ function updateBlockLabel(block, blockIndex) {
     if (!labelEl) return;
 
     const type = block.querySelector('[data-block-type-input]')?.value || 'text';
-    const typeLabel = type === 'floating_gallery' ? 'Floating Gallery' : type === 'text_column' ? 'Text Column' : 'Content';
+    const typeLabel = type === 'floating_gallery' ? 'Floating Gallery'
+        : type === 'text_column_row' ? 'Text Column Row'
+        : 'Content';
 
     labelEl.textContent = `Block ${blockIndex + 1} - ${typeLabel}`;
 }

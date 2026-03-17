@@ -305,9 +305,9 @@ class ProjectController extends Controller
             foreach ($localeBlocks as $blockIndex => $block) {
                 $type = data_get($block, 'type');
 
-                if (!in_array($type, ['text', 'floating_gallery', 'text_column'], true)) {
-                    continue;
-                }
+            if (!in_array($type, ['text', 'floating_gallery', 'text_column', 'text_column_row'], true)) {
+                continue;
+            }
 
                 if ($type === 'text') {
                     $content = (string)data_get($block, 'content', '');
@@ -324,47 +324,59 @@ class ProjectController extends Controller
                     continue;
                 }
 
-                if ($type === 'text_column') {
-                    $colStart = max(1, min(12, (int)data_get($block, 'col_start', 1)));
-                    $colSpan  = max(1, min(12, (int)data_get($block, 'col_span', 12)));
-                    if (($colStart + $colSpan - 1) > 12) {
-                        $colSpan = 12 - $colStart + 1;
-                    }
-
+                if ($type === 'text_column_row') {
                     $allowedColors = ['emerald-950', 'emerald-900', 'emerald-800', 'primary', 'gold-bright'];
-                    $headlineColor = data_get($block, 'headline_color', 'primary');
+                    $preparedItems = [];
 
-                    $imgFile = data_get($request->file('description_blocks'), "{$locale}.{$blockIndex}.image_file");
-                    $imgOld  = data_get($block, 'image');
-                    $imgUrl  = is_string($imgOld) ? $imgOld : null;
-                    if ($imgFile) {
-                        $path   = $imgFile->store('projects/description-blocks', 'public');
-                        $imgUrl = Storage::url($path);
+                    foreach ((data_get($block, 'items') ?: []) as $itemIndex => $item) {
+                        $colStart = max(1, min(12, (int)data_get($item, 'col_start', 1)));
+                        $colSpan  = max(1, min(12, (int)data_get($item, 'col_span', 12)));
+                        if (($colStart + $colSpan - 1) > 12) {
+                            $colSpan = 12 - $colStart + 1;
+                        }
+
+                        $imgFile = data_get($request->file('description_blocks'), "{$locale}.{$blockIndex}.items.{$itemIndex}.image_file");
+                        $imgOld  = data_get($item, 'image');
+                        $imgUrl  = is_string($imgOld) ? $imgOld : null;
+                        if ($imgFile) {
+                            $path   = $imgFile->store('projects/description-blocks', 'public');
+                            $imgUrl = Storage::url($path);
+                        }
+
+                        $imgAlignment = data_get($item, 'image_alignment', 'top');
+                        if (!in_array($imgAlignment, ['top', 'left', 'right'])) {
+                            $imgAlignment = 'top';
+                        }
+
+                        $headlineColor = data_get($item, 'headline_color', 'primary');
+
+                        $preparedItems[] = [
+                            'col_start'       => $colStart,
+                            'col_span'        => $colSpan,
+                            'headline'        => data_get($item, 'headline') ?: null,
+                            'headline_color'  => in_array($headlineColor, $allowedColors) ? $headlineColor : 'primary',
+                            'headline_font'   => data_get($item, 'headline_font', 'pangea') === 'nicevar' ? 'nicevar' : 'pangea',
+                            'headline_line'   => (bool)data_get($item, 'headline_line', false),
+                            'content'         => (string)data_get($item, 'content', ''),
+                            'content_line'    => (bool)data_get($item, 'content_line', false),
+                            'link_text'       => data_get($item, 'link_text') ?: null,
+                            'link_url'        => data_get($item, 'link_url') ?: null,
+                            'image'           => $imgUrl,
+                            'image_alignment' => $imgAlignment,
+                            'image_col_span'  => max(1, min(12, (int)data_get($item, 'image_col_span', 12))),
+                            'text_col_span'   => max(1, min(12, (int)data_get($item, 'text_col_span', 12))),
+                        ];
                     }
 
-                    $imgAlignment = data_get($block, 'image_alignment', 'top');
-                    if (!in_array($imgAlignment, ['top', 'left', 'right'])) {
-                        $imgAlignment = 'top';
+                    if (empty($preparedItems)) {
+                        continue;
                     }
 
                     $preparedLocaleBlocks[] = [
-                        'type'            => 'text_column',
-                        'headline'        => data_get($block, 'headline') ?: null,
-                        'headline_color'  => in_array($headlineColor, $allowedColors) ? $headlineColor : 'primary',
-                        'headline_font'   => data_get($block, 'headline_font', 'pangea') === 'nicevar' ? 'nicevar' : 'pangea',
-                        'headline_line'   => (bool)data_get($block, 'headline_line', false),
-                        'content'         => (string)data_get($block, 'content', ''),
-                        'content_line'    => (bool)data_get($block, 'content_line', false),
-                        'link_text'       => data_get($block, 'link_text') ?: null,
-                        'link_url'        => data_get($block, 'link_url') ?: null,
-                        'col_start'       => $colStart,
-                        'col_span'        => $colSpan,
-                        'padding_top'     => max(0, min(300, (int)data_get($block, 'padding_top', 0))),
-                        'padding_bottom'  => max(0, min(300, (int)data_get($block, 'padding_bottom', 0))),
-                        'image'           => $imgUrl,
-                        'image_alignment' => $imgAlignment,
-                        'image_col_span'  => max(1, min(12, (int)data_get($block, 'image_col_span', 12))),
-                        'text_col_span'   => max(1, min(12, (int)data_get($block, 'text_col_span', 12))),
+                        'type'           => 'text_column_row',
+                        'padding_top'    => max(0, min(300, (int)data_get($block, 'padding_top', 0))),
+                        'padding_bottom' => max(0, min(300, (int)data_get($block, 'padding_bottom', 0))),
+                        'items'          => $preparedItems,
                     ];
 
                     continue;
