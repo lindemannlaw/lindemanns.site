@@ -389,14 +389,20 @@
             display: grid;
             grid-template-columns: range.build(40, 60, px, 375, 1240) 1fr;
             column-gap: range.build(14, 20, px, 375, 1240);
-            align-items: start;
 
             &::before {
                 content: '';
                 display: block;
                 height: 1px;
                 background: var(--color-dark);
+                grid-column: 1;
+                grid-row: 1;
                 margin-top: 0.7em;
+                align-self: start;
+            }
+
+            > * {
+                grid-column: 2;
             }
         }
     }

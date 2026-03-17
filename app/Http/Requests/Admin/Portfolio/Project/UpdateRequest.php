@@ -65,6 +65,7 @@ class UpdateRequest extends FormRequest
             $rules['description_blocks.' . $locale . '.*.items.*.image'] = ['nullable', 'string'];
             $rules['description_blocks.' . $locale . '.*.items.*.image_file'] = ['nullable', 'image', 'mimes:jpg,png,webp', 'max:20480'];
             $rules['description_blocks.' . $locale . '.*.headline'] = ['nullable', 'string', 'max:255'];
+            $rules['description_blocks.' . $locale . '.*.headline_color'] = ['nullable', 'string', 'in:dark,gold,teal,gray,white'];
             $rules['description_blocks.' . $locale . '.*.headline_line'] = ['nullable'];
             $rules['description_blocks.' . $locale . '.*.content_line'] = ['nullable'];
             $rules['description_blocks.' . $locale . '.*.link_text'] = ['nullable', 'string', 'max:255'];

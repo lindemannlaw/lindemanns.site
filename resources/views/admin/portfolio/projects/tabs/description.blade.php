@@ -84,13 +84,20 @@
 
                                     <div data-block-type-panel="text_column" class="d-flex flex-column gap-3 {{ data_get($block, 'type') === 'text_column' ? null : 'd-none' }}">
                                         <div class="row g-3">
-                                            <div class="col-12">
+                                            <div class="col-12 col-lg-8">
                                                 <x-admin.field.text
                                                     :name="'description_blocks['. $lang .'][' . $blockIndex . '][headline]'"
                                                     :value="data_get($block, 'headline')"
                                                     :required="false"
                                                     :placeholder="'Headline (optional)'"
                                                 />
+                                            </div>
+                                            <div class="col-12 col-lg-4">
+                                                <select class="form-select" name="description_blocks[{{ $lang }}][{{ $blockIndex }}][headline_color]">
+                                                    @foreach(['dark' => 'Dark (Standard)', 'gold' => 'Gold', 'teal' => 'Teal', 'gray' => 'Grau', 'white' => 'Weiss'] as $val => $label)
+                                                        <option value="{{ $val }}" {{ data_get($block, 'headline_color', 'dark') === $val ? 'selected' : '' }}>{{ $label }}</option>
+                                                    @endforeach
+                                                </select>
                                             </div>
                                             <div class="col-12">
                                                 <div class="form-check form-switch">
@@ -321,12 +328,21 @@
 
                             <div data-block-type-panel="text_column" class="d-flex flex-column gap-3 d-none">
                                 <div class="row g-3">
-                                    <div class="col-12">
+                                    <div class="col-12 col-lg-8">
                                         <x-admin.field.text
                                             :name="'description_blocks['. $lang .'][__block__][headline]'"
                                             :required="false"
                                             :placeholder="'Headline (optional)'"
                                         />
+                                    </div>
+                                    <div class="col-12 col-lg-4">
+                                        <select class="form-select" name="description_blocks[{{ $lang }}][__block__][headline_color]">
+                                            <option value="dark" selected>Dark (Standard)</option>
+                                            <option value="gold">Gold</option>
+                                            <option value="teal">Teal</option>
+                                            <option value="gray">Grau</option>
+                                            <option value="white">Weiss</option>
+                                        </select>
                                     </div>
                                     <div class="col-12">
                                         <div class="form-check form-switch">

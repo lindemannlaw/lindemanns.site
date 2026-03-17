@@ -331,10 +331,14 @@ class ProjectController extends Controller
                         $colSpan = 12 - $colStart + 1;
                     }
 
+                    $allowedColors = ['dark', 'gold', 'teal', 'gray', 'white'];
+                    $headlineColor = data_get($block, 'headline_color', 'dark');
+
                     $preparedLocaleBlocks[] = [
-                        'type'          => 'text_column',
-                        'headline'      => data_get($block, 'headline') ?: null,
-                        'headline_line' => (bool)data_get($block, 'headline_line', false),
+                        'type'           => 'text_column',
+                        'headline'       => data_get($block, 'headline') ?: null,
+                        'headline_color' => in_array($headlineColor, $allowedColors) ? $headlineColor : 'dark',
+                        'headline_line'  => (bool)data_get($block, 'headline_line', false),
                         'content'       => (string)data_get($block, 'content', ''),
                         'content_line'  => (bool)data_get($block, 'content_line', false),
                         'link_text'     => data_get($block, 'link_text') ?: null,

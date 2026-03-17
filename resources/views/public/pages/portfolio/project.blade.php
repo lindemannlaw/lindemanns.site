@@ -152,7 +152,20 @@ $galleryImageSizes = [
                         <div class="project-text-columns">
                             <div class="project-text-column-item" style="--col-start: {{ $colStart }}; --col-span: {{ $colSpan }};">
                                 @if(filled(data_get($block, 'headline')))
-                                    <h3 class="{{ data_get($block, 'headline_line') ? 'has-line' : '' }}">{{ data_get($block, 'headline') }}</h3>
+                                    @php
+                                        $headlineColors = [
+                                            'dark'  => 'var(--color-dark)',
+                                            'gold'  => 'var(--color-gold)',
+                                            'teal'  => 'var(--color-primary-brand-600-stronger)',
+                                            'gray'  => 'var(--color-gray)',
+                                            'white' => 'var(--color-white)',
+                                        ];
+                                        $hColor = $headlineColors[data_get($block, 'headline_color', 'dark')] ?? 'var(--color-dark)';
+                                    @endphp
+                                    <h3
+                                        class="{{ data_get($block, 'headline_line') ? 'has-line' : '' }}"
+                                        style="color: {{ $hColor }}"
+                                    >{{ data_get($block, 'headline') }}</h3>
                                 @endif
                                 @if(filled(data_get($block, 'content')))
                                     <div class="project-text-column-content {{ data_get($block, 'content_line') ? 'has-line' : '' }}">
