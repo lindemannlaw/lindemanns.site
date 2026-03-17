@@ -12,11 +12,15 @@
             />
             <div class="col">
                 <div class="fw-semibold">{{ $project->title }}</div>
-                @if ($project->short_description)
+                @php
+                    $shortDesc = $project->getTranslation('short_description', app()->getLocale(), false)
+                        ?: $project->getTranslation('short_description', config('app.fallback_locale'), false);
+                @endphp
+                @if ($shortDesc)
                     <div
                         style="font-size: 14px;"
                         class="line-clamp-1 text-gray"
-                    >{!! $project->short_description !!}</div>
+                    >{{ strip_tags($shortDesc) }}</div>
                 @endif
             </div>
         </div>
