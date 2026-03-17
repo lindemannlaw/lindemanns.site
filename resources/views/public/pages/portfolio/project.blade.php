@@ -159,10 +159,10 @@ $galleryImageSizes = [
                                             'emerald-950' => 'var(--color-primary-brand-950-darkest)',
                                             'emerald-900' => 'var(--color-primary-brand-900-darker-silent)',
                                             'emerald-800' => 'var(--color-primary-brand-800-dark)',
-                                            'primary'     => 'var(--color-primary-brand-500-main)',
+                                            'primary'     => 'var(--color-font-primary)',
                                             'gold-bright' => 'var(--color-gold-lighter)',
                                         ];
-                                        $hColor = $headlineColors[data_get($block, 'headline_color', 'emerald-950')] ?? 'var(--color-primary-brand-950-darkest)';
+                                        $hColor = $headlineColors[data_get($block, 'headline_color', 'primary')] ?? 'var(--color-font-primary)';
                                         $hFont  = data_get($block, 'headline_font', 'pangea') === 'nicevar' ? 'font-nicevar' : '';
                                     @endphp
                                     <h3

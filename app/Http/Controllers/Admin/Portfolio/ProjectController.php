@@ -332,12 +332,12 @@ class ProjectController extends Controller
                     }
 
                     $allowedColors = ['emerald-950', 'emerald-900', 'emerald-800', 'primary', 'gold-bright'];
-                    $headlineColor = data_get($block, 'headline_color', 'emerald-950');
+                    $headlineColor = data_get($block, 'headline_color', 'primary');
 
                     $preparedLocaleBlocks[] = [
                         'type'           => 'text_column',
                         'headline'       => data_get($block, 'headline') ?: null,
-                        'headline_color' => in_array($headlineColor, $allowedColors) ? $headlineColor : 'emerald-950',
+                        'headline_color' => in_array($headlineColor, $allowedColors) ? $headlineColor : 'primary',
                         'headline_font'   => data_get($block, 'headline_font', 'pangea') === 'nicevar' ? 'nicevar' : 'pangea',
                         'padding_top'     => max(0, min(300, (int)data_get($block, 'padding_top', 0))),
                         'padding_bottom'  => max(0, min(300, (int)data_get($block, 'padding_bottom', 0))),
