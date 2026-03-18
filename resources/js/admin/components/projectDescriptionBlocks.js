@@ -134,9 +134,13 @@ function mirrorItemMove(wrapper, itemSelector, oldIndex, newIndex) {
 // and has correct layout field values, so real-time sync never fails silently.
 
 function syncBuildersOnInit(primaryBuilder, siblingBuilder) {
+    console.log('[syncBuildersOnInit] called, primary locale:', primaryBuilder.dataset.locale, '→ sibling locale:', siblingBuilder.dataset.locale);
     const primaryBlocksWrapper = primaryBuilder.querySelector('[data-blocks-wrapper]');
     const siblingBlocksWrapper = siblingBuilder.querySelector('[data-blocks-wrapper]');
-    if (!primaryBlocksWrapper || !siblingBlocksWrapper) return;
+    if (!primaryBlocksWrapper || !siblingBlocksWrapper) {
+        console.warn('[syncBuildersOnInit] missing blocks-wrapper!');
+        return;
+    }
 
     const primaryBlocks = [...primaryBlocksWrapper.querySelectorAll(':scope > [data-block]')];
 
@@ -190,18 +194,27 @@ function syncBuildersOnInit(primaryBuilder, siblingBuilder) {
     // Copy all layout field values from primary → sibling
     const primaryLocale = primaryBuilder.dataset.locale;
     const siblingLocale = siblingBuilder.dataset.locale;
+    let syncedCount = 0;
     primaryBuilder.querySelectorAll('[name]').forEach((primaryField) => {
         const name = primaryField.getAttribute('name');
         if (!name || !isLayoutField(name) || primaryField.type === 'file') return;
         const siblingName = name.replace(`[${primaryLocale}]`, `[${siblingLocale}]`);
         const siblingField = findFieldByName(siblingBuilder, siblingName);
-        if (!siblingField) return;
+        if (!siblingField) {
+            console.warn('[syncBuildersOnInit] sibling field NOT FOUND for', siblingName);
+            return;
+        }
         if (primaryField.type === 'checkbox' || primaryField.type === 'radio') {
             siblingField.checked = primaryField.checked;
         } else {
+            if (name.includes('col_span') || name.includes('col_start')) {
+                console.log('[syncBuildersOnInit] syncing', name, '=', primaryField.value, '→', siblingName);
+            }
             siblingField.value = primaryField.value;
         }
+        syncedCount++;
     });
+    console.log('[syncBuildersOnInit] done – synced', syncedCount, 'layout fields from', primaryLocale, '→', siblingLocale);
 }
 
 // ─── Core init ───────────────────────────────────────────────────────────────
