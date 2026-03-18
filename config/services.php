@@ -44,4 +44,9 @@ return [
         'seo_model' => env('OPENAI_SEO_MODEL', 'gpt-4o-mini'),
     ],
 
+    'anthropic' => [
+        'api_key' => env('ANTHROPIC_API_KEY', ''),
+        'seo_model' => env('ANTHROPIC_SEO_MODEL', 'claude-haiku-4-5-20251001'),
+    ],
+
 ];

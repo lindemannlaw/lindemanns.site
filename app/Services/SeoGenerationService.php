@@ -6,7 +6,7 @@ use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
 /**
- * Generates SEO-optimised metadata for any content module via OpenAI.
+ * Generates SEO-optimised metadata via Claude (Anthropic).
  *
  * Context keys recognised (all optional, provide as many as available):
  *   title, short_description, location, property_type, area, content
@@ -23,8 +23,8 @@ class SeoGenerationService
 
     public function __construct()
     {
-        $this->apiKey = config('services.openai.api_key') ?? '';
-        $this->model  = config('services.openai.seo_model', 'gpt-4o-mini');
+        $this->apiKey = config('services.anthropic.api_key') ?? '';
+        $this->model  = config('services.anthropic.seo_model', 'claude-haiku-4-5-20251001');
     }
 
     public function isConfigured(): bool
@@ -42,7 +42,7 @@ class SeoGenerationService
         $empty = ['seo_title' => '', 'seo_description' => '', 'seo_keywords' => ''];
 
         if (!$this->isConfigured()) {
-            Log::warning('[SeoGenerationService] OpenAI API key not configured.');
+            Log::warning('[SeoGenerationService] Anthropic API key not configured.');
             return $empty;
         }
 
@@ -50,28 +50,29 @@ class SeoGenerationService
 
         try {
             $response = Http::withHeaders([
-                'Authorization' => 'Bearer ' . $this->apiKey,
-                'Content-Type'  => 'application/json',
-            ])->timeout(30)->post('https://api.openai.com/v1/chat/completions', [
-                'model'       => $this->model,
-                'temperature' => 0.4,
-                'max_tokens'  => 300,
-                'messages'    => [
-                    ['role' => 'system', 'content' => $this->systemPrompt()],
-                    ['role' => 'user',   'content' => $prompt],
+                'x-api-key'         => $this->apiKey,
+                'anthropic-version' => '2023-06-01',
+                'Content-Type'      => 'application/json',
+            ])->timeout(30)->post('https://api.anthropic.com/v1/messages', [
+                'model'      => $this->model,
+                'max_tokens' => 300,
+                'system'     => $this->systemPrompt(),
+                'messages'   => [
+                    ['role' => 'user', 'content' => $prompt],
                 ],
-                'response_format' => ['type' => 'json_object'],
             ]);
 
             if (!$response->successful()) {
-                Log::warning('[SeoGenerationService] OpenAI request failed', [
+                Log::warning('[SeoGenerationService] Anthropic request failed', [
                     'status' => $response->status(),
                     'body'   => $response->body(),
                 ]);
                 return $empty;
             }
 
-            $content = $response->json('choices.0.message.content', '{}');
+            $content = $response->json('content.0.text', '{}');
+            // Strip markdown code fences if present
+            $content = preg_replace('/^```(?:json)?\s*|\s*```$/s', '', trim($content));
             $data    = json_decode($content, true) ?? [];
 
             return [

@@ -35,7 +35,7 @@ class SeoController extends Controller
         ]);
 
         if (!$this->seo->isConfigured()) {
-            return response()->json(['error' => 'OpenAI API not configured.'], 503);
+            return response()->json(['error' => 'Anthropic API not configured.'], 503);
         }
 
         $result = $this->seo->generate($validated['context'], $validated['locale']);
