@@ -37,6 +37,18 @@ export function translateBlocks() {
         if (button._translateInited) return;
         button._translateInited = true;
         button.addEventListener('click', () => handleTranslate(button));
+
+        // Seed the snapshot from current (DB) values so the first
+        // translation only picks up fields the user actually changed.
+        const form = button.closest('form')
+            ?? button.closest('.modal-content')?.querySelector('form');
+        if (form && !form._translationSnapshot) {
+            const initial = new Map();
+            collectTextItems(form, 'en').forEach(({ key, text }) => {
+                if (hasContent(text)) initial.set(key, text);
+            });
+            form._translationSnapshot = initial;
+        }
     });
 }
 
