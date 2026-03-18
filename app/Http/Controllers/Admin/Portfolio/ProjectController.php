@@ -123,6 +123,12 @@ class ProjectController extends Controller
         try {
             DB::beginTransaction();
 
+            // Prepare the description_blocks JSON ourselves to guarantee persistence
+            $descBlocksJson = json_encode(
+                $data['description_blocks'] ?? [],
+                JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES
+            );
+
             $project->fill($data);
 
             $rawDesc = $project->getAttributes()['description'] ?? null;
@@ -138,6 +144,14 @@ class ProjectController extends Controller
             ]);
 
             $project->saveOrFail();
+
+            // ── Fallback: force-write description_blocks directly via DB ──
+            // This bypasses Eloquent/Spatie isDirty detection entirely.
+            // If Eloquent skipped the write (isDirty=false due to cast mismatch),
+            // this guarantees the prepared data reaches the database.
+            DB::table('projects')
+                ->where('id', $project->id)
+                ->update(['description_blocks' => $descBlocksJson]);
 
             if ($request->hasFile('hero_image')) {
                 $project->clearMediaCollection($project->mediaHero);
