@@ -321,6 +321,7 @@ function handleClick(event, builder, blocksWrapper) {
     const toggleBlockButton      = event.target.closest('[data-block-toggle]');
     const addBlockButton         = event.target.closest('[data-block-add]');
     const addAfterButton         = event.target.closest('[data-block-add-after]');
+    const duplicateBlockButton   = event.target.closest('[data-block-duplicate]');
     const removeBlockButton      = event.target.closest('[data-block-remove]');
     const addGalleryItemButton   = event.target.closest('[data-gallery-item-add]');
     const addGalleryItemAfter    = event.target.closest('[data-gallery-item-add-after]');
@@ -385,6 +386,37 @@ function handleClick(event, builder, blocksWrapper) {
                     fields();
                 }
             } catch (e) { console.error('[descBlocks] addAfter sibling sync failed', e); }
+        }
+        return;
+    }
+
+    // ── Duplicate block ────────────────────────────────────────────────────
+    if (duplicateBlockButton) {
+        const currentBlock = duplicateBlockButton.closest('[data-block]');
+        if (!currentBlock) return;
+        const blockIdx = getBlockIndex(currentBlock);
+
+        const clone = duplicateBlock(currentBlock, builder);
+        currentBlock.insertAdjacentElement('afterend', clone);
+        reindexBuilder(builder);
+        fields();
+        wysiwyg();
+        initGalleryItemsSortable(clone, builder);
+        initTcItemsSortable(clone, builder);
+
+        if (sibling) {
+            try {
+                const siblingBlock = getBlockAtIndex(sibling, blockIdx);
+                if (siblingBlock) {
+                    const siblingClone = duplicateBlock(siblingBlock, sibling);
+                    siblingBlock.insertAdjacentElement('afterend', siblingClone);
+                    reindexBuilder(sibling);
+                    fields();
+                    wysiwyg();
+                    initGalleryItemsSortable(siblingClone, sibling);
+                    initTcItemsSortable(siblingClone, sibling);
+                }
+            } catch (e) { console.error('[descBlocks] duplicate sibling sync failed', e); }
         }
         return;
     }
@@ -628,6 +660,40 @@ function initTcItemsSortable(block, builder) {
 }
 
 // ─── Factory helpers ─────────────────────────────────────────────────────────
+
+function duplicateBlock(sourceBlock, builder) {
+    // Capture WYSIWYG content before cloning (SunEditor instances don't survive clone)
+    const wysiwygValues = new Map();
+    sourceBlock.querySelectorAll('[data-wysiwyg]').forEach(textarea => {
+        const editor = textarea._sunEditor;
+        wysiwygValues.set(textarea.getAttribute('name'), editor ? editor.getContents() : textarea.value);
+    });
+
+    const clone = sourceBlock.cloneNode(true);
+
+    // Remove stale SunEditor wrappers — they'll be re-created by wysiwyg()
+    clone.querySelectorAll('.sun-editor').forEach(el => el.remove());
+    // Unhide the original textareas so SunEditor can reinit them
+    clone.querySelectorAll('[data-wysiwyg]').forEach(textarea => {
+        textarea.style.display = '';
+        textarea._sunEditor = null;
+        const name = textarea.getAttribute('name');
+        if (wysiwygValues.has(name)) {
+            textarea.value = wysiwygValues.get(name);
+        }
+    });
+
+    // Reset sortable init flags so new Sortable instances are created
+    clone.querySelectorAll('[data-sortable-inited]').forEach(el => {
+        delete el.dataset.sortableInited;
+    });
+
+    // Reset builder init flag (not needed for blocks, but safety)
+    delete clone.dataset.inited;
+
+    setBlockCollapsed(clone, true);
+    return clone;
+}
 
 function createBlock(builder, type = 'text') {
     const blockTemplate = getTemplateFromPane(builder, '[data-block-template="text"]');

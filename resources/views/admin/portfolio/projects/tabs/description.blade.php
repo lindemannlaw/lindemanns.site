@@ -98,6 +98,7 @@
                                         <option value="text_column_row" {{ data_get($block, 'type') === 'text_column_row' ? 'selected' : null }}>Text Column Row</option>
                                     </select>
                                     <x-admin.button data-block-add-after class="p-2 ms-auto" :btn="'btn-outline-success'" :iconName="'plus-circle'" />
+                                    <x-admin.button data-block-duplicate class="p-2" :btn="'btn-outline-secondary'" :iconName="'copy'" />
                                     <x-admin.button data-block-remove class="p-2" :btn="'btn-outline-danger'" :iconName="'dash-circle'" />
                                     <x-admin.button data-block-move class="p-2" :btn="'btn-outline-secondary'" :iconName="'arrows-move'" />
                                     <button type="button" class="btn btn-outline-secondary p-2" data-block-toggle aria-expanded="false">
@@ -398,6 +399,7 @@
                                 <option value="text_column_row">Text Column Row</option>
                             </select>
                             <x-admin.button data-block-add-after class="p-2 ms-auto" :btn="'btn-outline-success'" :iconName="'plus-circle'" />
+                            <x-admin.button data-block-duplicate class="p-2" :btn="'btn-outline-secondary'" :iconName="'copy'" />
                             <x-admin.button data-block-remove class="p-2" :btn="'btn-outline-danger'" :iconName="'dash-circle'" />
                             <x-admin.button data-block-move class="p-2" :btn="'btn-outline-secondary'" :iconName="'arrows-move'" />
                             <button type="button" class="btn btn-outline-secondary p-2" data-block-toggle aria-expanded="false">
