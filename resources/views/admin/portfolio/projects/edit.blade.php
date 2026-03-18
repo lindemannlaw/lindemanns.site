@@ -9,13 +9,20 @@
             :btn="'btn-outline-danger btn-sm'"
         />
         <x-admin.button
+            data-generate-seo
+            data-generate-seo-url="{{ route('admin.generate-seo') }}"
+            :btn="'btn-outline-secondary btn-sm'"
+            :iconName="'stars'"
+            :title="'SEO generieren'"
+        />
+        <x-admin.button
             data-translate-blocks
             data-target-locale="de"
             data-translate-url="{{ route('admin.translate') }}"
-            data-generate-seo-url="{{ route('admin.generate-seo') }}"
             :btn="'btn-outline-info btn-sm'"
             :iconName="'globe'"
-            :title="'Auf Deutsch übersetzen'"
+            :shortTitle="'Übersetze…'"
+            :longTitle="'Auf Deutsch übersetzen'"
         />
         <x-admin.button
             :type="'submit'"

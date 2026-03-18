@@ -1,12 +1,17 @@
 /**
- * DeepL translation with review overlay.
+ * DeepL translation with review overlay + standalone SEO generation.
  *
- * Flow:
- *  1. Collect changed EN fields (delta strategy)
- *  2. POST to DeepL endpoint
- *  3. Show review overlay: approve/deselect/edit each translation
- *  4. Apply approved translations to DE fields
- *  5. Update snapshot (delta state)
+ * Flow (Translate):
+ *  1. Collect ALL EN text fields
+ *  2. Identify changed fields (delta vs DB snapshot)
+ *  3. Send ALL fields with content to DeepL
+ *  4. Show review overlay: changed fields on top (pre-selected),
+ *     unchanged fields below (deselected)
+ *  5. Apply approved translations to DE fields
+ *
+ * Flow (SEO):
+ *  1. Generate EN SEO via Claude
+ *  2. Populate EN SEO fields
  */
 
 const TEXT_ONLY_NAMES = new Set(['content', 'headline', 'link_text', 'link_url', 'subhead']);
@@ -33,15 +38,14 @@ const FIELD_LABELS = {
 // ---------------------------------------------------------------------------
 
 export function translateBlocks() {
+    // Translate buttons
     document.querySelectorAll('[data-translate-blocks]').forEach(button => {
         if (button._translateInited) return;
         button._translateInited = true;
         button.addEventListener('click', () => handleTranslate(button));
 
-        // Seed the snapshot from current (DB) values so the first
-        // translation only picks up fields the user actually changed.
-        const form = button.closest('form')
-            ?? button.closest('.modal-content')?.querySelector('form');
+        // Seed snapshot from current (DB) values
+        const form = getForm(button);
         if (form && !form._translationSnapshot) {
             const initial = new Map();
             collectTextItems(form, 'en').forEach(({ key, text }) => {
@@ -50,10 +54,56 @@ export function translateBlocks() {
             form._translationSnapshot = initial;
         }
     });
+
+    // SEO generate buttons (standalone)
+    document.querySelectorAll('[data-generate-seo]').forEach(button => {
+        if (button._seoInited) return;
+        button._seoInited = true;
+        button.addEventListener('click', () => handleGenerateSeo(button));
+    });
 }
 
 // ---------------------------------------------------------------------------
-// Main handler
+// Form helper
+// ---------------------------------------------------------------------------
+
+function getForm(button) {
+    return button.closest('form')
+        ?? button.closest('.modal-content')?.querySelector('form');
+}
+
+// ---------------------------------------------------------------------------
+// SEO generation handler
+// ---------------------------------------------------------------------------
+
+async function handleGenerateSeo(button) {
+    const form = getForm(button);
+    if (!form) return;
+
+    const generateSeoUrl = button.dataset.generateSeoUrl;
+    if (!generateSeoUrl) {
+        console.error('[translateBlocks] data-generate-seo-url missing');
+        return;
+    }
+
+    const titleSpan     = button.querySelector('span');
+    const originalTitle = titleSpan?.textContent ?? '';
+    button.disabled     = true;
+    if (titleSpan) titleSpan.textContent = 'SEO erstellen…';
+
+    try {
+        await generateSeoFields(form, 'en', generateSeoUrl);
+        flashButton(button, '✓ SEO erstellt', 2500, titleSpan, originalTitle);
+    } catch (e) {
+        console.error('[translateBlocks] SEO generation failed:', e);
+        alert('SEO-Generierung fehlgeschlagen: ' + e.message);
+        if (titleSpan) titleSpan.textContent = originalTitle;
+        button.disabled = false;
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Translation handler
 // ---------------------------------------------------------------------------
 
 async function handleTranslate(button) {
@@ -66,34 +116,38 @@ async function handleTranslate(button) {
         return;
     }
 
-    // Button may sit in modal-header (sibling of form, not ancestor)
-    const form = button.closest('form')
-        ?? button.closest('.modal-content')?.querySelector('form');
+    const form = getForm(button);
     if (!form) return;
 
-    // Grab UI refs early (needed for loading states below)
     const titleSpan     = button.querySelector('span');
     const originalTitle = titleSpan?.textContent ?? '';
     button.disabled     = true;
+    if (titleSpan) titleSpan.textContent = 'Übersetze…';
 
-    // Generate / refresh EN SEO fields via OpenAI before translation
-    const generateSeoUrl = button.dataset.generateSeoUrl ?? null;
-    if (generateSeoUrl) {
-        if (titleSpan) titleSpan.textContent = 'SEO erstellen…';
-        await generateSeoFields(form, sourceLocale, generateSeoUrl);
-        if (titleSpan) titleSpan.textContent = 'Übersetze…';
-    }
-
+    // Collect all EN text items and determine which ones changed
     const allItems   = collectTextItems(form, sourceLocale);
     const snapshot   = form._translationSnapshot ?? null;
-    const deltaItems = getDeltaItems(allItems, snapshot);
+    const itemsWithContent = allItems.filter(({ text }) => hasContent(text));
 
-    if (deltaItems.length === 0) {
-        flashButton(button, '✓ Kein Update nötig', 2000, titleSpan, originalTitle);
+    if (itemsWithContent.length === 0) {
+        flashButton(button, '✓ Keine Texte', 2000, titleSpan, originalTitle);
         return;
     }
 
-    if (titleSpan) titleSpan.textContent = 'Übersetze…';
+    // Determine which items changed vs snapshot
+    const changedKeys = new Set();
+    itemsWithContent.forEach(({ key, text }) => {
+        if (snapshot === null) {
+            // No snapshot = first time, treat all as changed
+            changedKeys.add(key);
+        } else if (!snapshot.has(key)) {
+            // New field
+            changedKeys.add(key);
+        } else if (snapshot.get(key) !== text) {
+            // Changed field
+            changedKeys.add(key);
+        }
+    });
 
     try {
         const csrfToken = document.querySelector('meta[name=csrf-token]')?.content ?? '';
@@ -108,7 +162,7 @@ async function handleTranslate(button) {
             body: JSON.stringify({
                 source_lang: sourceLocale,
                 target_lang: targetLocale,
-                items: deltaItems.map(({ key, text, isHtml }) => ({ key, text, isHtml })),
+                items: itemsWithContent.map(({ key, text, isHtml }) => ({ key, text, isHtml })),
             }),
         });
 
@@ -119,17 +173,15 @@ async function handleTranslate(button) {
 
         const { translations = {} } = await response.json();
 
-        // Restore button label while the review overlay is shown
         if (titleSpan) titleSpan.textContent = originalTitle;
-        // Keep button disabled until overlay is closed
 
-        const approved = await showReviewOverlay(translations, deltaItems);
+        const approved = await showReviewOverlay(translations, itemsWithContent, changedKeys);
 
         button.disabled = false;
 
         if (approved === null) return; // user cancelled
 
-        // Apply approved (and potentially edited) translations to DE fields
+        // Apply approved translations to DE fields
         let count = 0;
         for (const [sourceKey, { text: translatedText, isHtml }] of Object.entries(approved)) {
             const targetKey   = sourceKey.replace(`[${sourceLocale}]`, `[${targetLocale}]`);
@@ -146,11 +198,10 @@ async function handleTranslate(button) {
             count++;
         }
 
-        // Update snapshot: record the EN values that were approved
+        // Update snapshot with all items that were shown (regardless of approval)
         const newSnapshot = form._translationSnapshot ?? new Map();
-        const approvedKeys = new Set(Object.keys(approved));
-        deltaItems.forEach(({ key, text }) => {
-            if (approvedKeys.has(key)) newSnapshot.set(key, text);
+        itemsWithContent.forEach(({ key, text }) => {
+            newSnapshot.set(key, text);
         });
         form._translationSnapshot = newSnapshot;
 
@@ -168,12 +219,7 @@ async function handleTranslate(button) {
 // Review overlay
 // ---------------------------------------------------------------------------
 
-/**
- * Show a full-screen review overlay.
- * @returns {Promise<Record<string, {text: string, isHtml: boolean}> | null>}
- *   Resolves with approved translations keyed by sourceKey, or null on cancel.
- */
-function showReviewOverlay(translations, deltaItems) {
+function showReviewOverlay(translations, allItems, changedKeys) {
     return new Promise(resolve => {
         let settled = false;
 
@@ -188,7 +234,7 @@ function showReviewOverlay(translations, deltaItems) {
         const onKeydown = e => { if (e.key === 'Escape') finish(null); };
         document.addEventListener('keydown', onKeydown);
 
-        const overlay = buildOverlayEl(translations, deltaItems);
+        const overlay = buildOverlayEl(translations, allItems, changedKeys);
         document.body.appendChild(overlay);
 
         overlay.addEventListener('click', e => { if (e.target === overlay) finish(null); });
@@ -209,7 +255,7 @@ function showReviewOverlay(translations, deltaItems) {
     });
 }
 
-function buildOverlayEl(translations, deltaItems) {
+function buildOverlayEl(translations, allItems, changedKeys) {
     const overlay = document.createElement('div');
     overlay.style.cssText = [
         'position:fixed;inset:0;z-index:10050;',
@@ -217,11 +263,23 @@ function buildOverlayEl(translations, deltaItems) {
         'background:rgba(0,0,0,0.55);padding:1rem;',
     ].join('');
 
-    // Build each translation item
-    const itemsHtml = deltaItems.map(({ key, text: sourceText, isHtml }) => {
+    // Sort: changed items first, then unchanged
+    const sortedItems = [...allItems].sort((a, b) => {
+        const aChanged = changedKeys.has(a.key) ? 0 : 1;
+        const bChanged = changedKeys.has(b.key) ? 0 : 1;
+        return aChanged - bChanged;
+    });
+
+    const changedCount = [...changedKeys].length;
+
+    const itemsHtml = sortedItems.map(({ key, text: sourceText, isHtml }) => {
         const translated    = translations[key] ?? '';
         const label         = getLabelFromKey(key);
+        const isChanged     = changedKeys.has(key);
         const sourcePreview = sourceText.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+        const badgeHtml     = isChanged
+            ? '<span class="badge bg-warning text-dark ms-2">Geändert</span>'
+            : '';
 
         const editorHtml = isHtml
             ? `<div
@@ -239,10 +297,11 @@ function buildOverlayEl(translations, deltaItems) {
                 >${escHtml(translated)}</textarea>`;
 
         return `
-            <div class="border rounded p-3 d-flex flex-column gap-2" data-tro-item>
+            <div class="border rounded p-3 d-flex flex-column gap-2 ${isChanged ? 'border-warning' : ''}" data-tro-item>
                 <div class="d-flex align-items-center gap-2">
-                    <input class="form-check-input flex-shrink-0 mt-0" type="checkbox" checked data-tro-checkbox>
+                    <input class="form-check-input flex-shrink-0 mt-0" type="checkbox" ${isChanged ? 'checked' : ''} data-tro-checkbox>
                     <span class="fw-semibold small text-uppercase">${escHtml(label)}</span>
+                    ${badgeHtml}
                 </div>
                 <div class="small text-muted fst-italic border-start border-2 border-secondary-subtle ps-2"
                      style="overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;">
@@ -252,6 +311,9 @@ function buildOverlayEl(translations, deltaItems) {
             </div>`;
     }).join('');
 
+    // Separator between changed and unchanged sections
+    const separatorIndex = changedCount;
+
     overlay.innerHTML = `
         <div class="bg-white rounded-3 shadow-lg d-flex flex-column"
              style="width:min(800px,96vw);max-height:90vh;">
@@ -259,13 +321,19 @@ function buildOverlayEl(translations, deltaItems) {
             <div class="d-flex align-items-center gap-3 px-4 py-3 border-bottom flex-shrink-0">
                 <h5 class="mb-0 me-auto fw-semibold">Übersetzungen prüfen</h5>
                 <label class="d-flex align-items-center gap-2 mb-0 small user-select-none" style="cursor:pointer;">
-                    <input class="form-check-input mt-0" type="checkbox" id="tro-select-all" checked>
+                    <input class="form-check-input mt-0" type="checkbox" id="tro-select-all">
                     Alle auswählen
                 </label>
             </div>
 
             <div class="overflow-y-auto flex-grow-1 px-4 py-3 d-flex flex-column gap-3">
+                ${changedCount > 0 && changedCount < allItems.length
+                    ? `<div class="small fw-semibold text-warning-emphasis">${changedCount} geänderte Felder</div>`
+                    : ''}
                 ${itemsHtml}
+                ${changedCount > 0 && changedCount < allItems.length
+                    ? '' // separator is visual via border-warning on changed items
+                    : ''}
             </div>
 
             <div class="d-flex align-items-center justify-content-between gap-2 px-4 py-3 border-top flex-shrink-0">
@@ -285,7 +353,7 @@ function buildOverlayEl(translations, deltaItems) {
     const updateState = () => {
         const all     = [...overlay.querySelectorAll('[data-tro-checkbox]')];
         const checked = all.filter(c => c.checked).length;
-        countEl.textContent          = `${checked} von ${deltaItems.length} ausgewählt`;
+        countEl.textContent          = `${checked} von ${allItems.length} ausgewählt`;
         selectAllEl.checked          = checked === all.length;
         selectAllEl.indeterminate    = checked > 0 && checked < all.length;
         applyBtn.disabled            = checked === 0;
@@ -309,8 +377,6 @@ function buildOverlayEl(translations, deltaItems) {
 // ---------------------------------------------------------------------------
 
 function getLabelFromKey(key) {
-    // description_blocks[en][0][items][1][headline]
-    // description_blocks[en][0][content]
     const db = key.match(/description_blocks\[en\]\[(\d+)\](?:\[items\]\[(\d+)\])?\[(\w+)\]/);
     if (db) {
         const block = parseInt(db[1]) + 1;
@@ -319,11 +385,9 @@ function getLabelFromKey(key) {
         return item ? `Block ${block} · Spalte ${item} · ${field}` : `Block ${block} · ${field}`;
     }
 
-    // property_details[en][property_type]
     const pd = key.match(/property_details\[en\]\[(\w+)\]/);
     if (pd) return `Property Details · ${FIELD_LABELS[pd[1]] ?? humanize(pd[1])}`;
 
-    // title[en], short_description[en], …
     const sf = key.match(/^(\w+)\[en\]/);
     if (sf) return FIELD_LABELS[sf[1]] ?? humanize(sf[1]);
 
@@ -335,14 +399,9 @@ function humanize(str) {
 }
 
 // ---------------------------------------------------------------------------
-// SEO generation (OpenAI)
+// SEO generation (Claude/Anthropic)
 // ---------------------------------------------------------------------------
 
-/**
- * Call the generate-seo endpoint and populate EN SEO fields with the result.
- * Always overwrites existing SEO fields so the user gets fresh AI-generated copy.
- * Errors are logged but never block the translate flow.
- */
 async function generateSeoFields(form, locale, generateSeoUrl) {
     const get = name => {
         const el = form.querySelector(`[name="${CSS.escape(name)}"]`);
@@ -364,37 +423,30 @@ async function generateSeoFields(form, locale, generateSeoUrl) {
         area:              get('area'),
     };
 
-    // Skip if there's not enough data to generate meaningful SEO
     if (!context.title && !context.short_description) return;
 
-    try {
-        const csrfToken = document.querySelector('meta[name=csrf-token]')?.content ?? '';
+    const csrfToken = document.querySelector('meta[name=csrf-token]')?.content ?? '';
 
-        const response = await fetch(generateSeoUrl, {
-            method: 'POST',
-            headers: {
-                'Content-Type':     'application/json',
-                'X-CSRF-TOKEN':     csrfToken,
-                'X-Requested-With': 'XMLHttpRequest',
-            },
-            body: JSON.stringify({ locale, context }),
-        });
+    const response = await fetch(generateSeoUrl, {
+        method: 'POST',
+        headers: {
+            'Content-Type':     'application/json',
+            'X-CSRF-TOKEN':     csrfToken,
+            'X-Requested-With': 'XMLHttpRequest',
+        },
+        body: JSON.stringify({ locale, context }),
+    });
 
-        if (!response.ok) {
-            console.warn('[translateBlocks] SEO generation failed:', response.status);
-            return;
-        }
-
-        const { seo_title, seo_description, seo_keywords } = await response.json();
-
-        set(`seo_title[${locale}]`,       seo_title);
-        set(`seo_description[${locale}]`, seo_description);
-        set(`seo_keywords[${locale}]`,    seo_keywords);
-
-    } catch (e) {
-        console.warn('[translateBlocks] SEO generation error:', e.message);
-        // Non-fatal – translation continues without generated SEO
+    if (!response.ok) {
+        const err = await response.json().catch(() => ({}));
+        throw new Error(err.error || `SEO generation failed: HTTP ${response.status}`);
     }
+
+    const { seo_title, seo_description, seo_keywords } = await response.json();
+
+    set(`seo_title[${locale}]`,       seo_title);
+    set(`seo_description[${locale}]`, seo_description);
+    set(`seo_keywords[${locale}]`,    seo_keywords);
 }
 
 function stripHtml(str) {
@@ -408,6 +460,7 @@ function stripHtml(str) {
 function collectTextItems(form, sourceLocale) {
     const items = [];
     form.querySelectorAll('[name]').forEach(field => {
+        if (field.disabled) return;
         if (field.type === 'file'     || field.type === 'hidden' ||
             field.type === 'checkbox' || field.type === 'radio'  ||
             field.tagName === 'SELECT') return;
@@ -420,21 +473,12 @@ function collectTextItems(form, sourceLocale) {
             if (!match || !TEXT_ONLY_NAMES.has(match[1])) return;
         }
 
-        items.push({ key: name, text: field.value ?? '', isHtml: field.hasAttribute('data-wysiwyg') });
+        // For WYSIWYG fields, get content from SunEditor if available
+        const value = field._sunEditor ? field._sunEditor.getContents() : (field.value ?? '');
+
+        items.push({ key: name, text: value, isHtml: field.hasAttribute('data-wysiwyg') });
     });
     return items;
-}
-
-// ---------------------------------------------------------------------------
-// Delta
-// ---------------------------------------------------------------------------
-
-function getDeltaItems(items, snapshot) {
-    if (snapshot === null) return items.filter(({ text }) => hasContent(text));
-    return items.filter(({ key, text }) => {
-        if (!snapshot.has(key)) return hasContent(text);
-        return snapshot.get(key) !== text && hasContent(text);
-    });
 }
 
 // ---------------------------------------------------------------------------

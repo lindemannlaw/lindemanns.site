@@ -12,7 +12,7 @@
     ]
   },
   "resources/css/public/public.scss": {
-    "file": "assets/css/public-DJqx7EY-.css",
+    "file": "assets/css/public-XJfCyyCe.css",
     "src": "resources/css/public/public.scss",
     "isEntry": true,
     "names": [
@@ -20,7 +20,7 @@
     ]
   },
   "resources/js/admin/admin.js": {
-    "file": "assets/js/admin-FcqrGC0C.js",
+    "file": "assets/js/admin-CJ1vmNtU.js",
     "name": "admin",
     "src": "resources/js/admin/admin.js",
     "isEntry": true,
