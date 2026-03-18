@@ -118,23 +118,27 @@ class ProjectController extends Controller
 
         // #region agent log
         $rawBlocks = $request->input('description_blocks', []);
-        Log::info('[debug-fb4a59] PATCH received - raw description_blocks', [
-            'hypothesisId' => 'B', 'project_id' => $project->id,
-            'blocks_en_0' => data_get($rawBlocks, 'en.0'),
-            'blocks_de_0' => data_get($rawBlocks, 'de.0'),
-            'en_count' => count(data_get($rawBlocks, 'en', [])),
-            'de_count' => count(data_get($rawBlocks, 'de', [])),
-        ]);
+        $rawColSpans = [];
+        foreach (data_get($rawBlocks, 'en', []) as $bi => $block) {
+            foreach (data_get($block, 'items', []) as $ii => $item) {
+                $rawColSpans["en[$bi][$ii].col_span"] = data_get($item, 'col_span', 'MISSING');
+                $rawColSpans["en[$bi][$ii].col_start"] = data_get($item, 'col_start', 'MISSING');
+            }
+        }
+        Log::info('[debug-fb4a59] PATCH received - col values', ['project_id' => $project->id, 'col_spans' => $rawColSpans]);
         // #endregion
 
         $data = $this->prepareDescriptionBlocksData($request, $data);
 
         // #region agent log
-        Log::info('[debug-fb4a59] After prepareDescriptionBlocksData', [
-            'hypothesisId' => 'A',
-            'en_block_0' => data_get($data, 'description_blocks.en.0'),
-            'de_block_0' => data_get($data, 'description_blocks.de.0'),
-        ]);
+        $prepColSpans = [];
+        foreach (data_get($data, 'description_blocks.en', []) as $bi => $block) {
+            foreach (data_get($block, 'items', []) as $ii => $item) {
+                $prepColSpans["en[$bi][$ii].col_span"] = data_get($item, 'col_span', 'MISSING');
+                $prepColSpans["en[$bi][$ii].col_start"] = data_get($item, 'col_start', 'MISSING');
+            }
+        }
+        Log::info('[debug-fb4a59] After prepareDescriptionBlocksData - col values', ['col_spans' => $prepColSpans]);
         // #endregion
 
         try {
@@ -142,23 +146,29 @@ class ProjectController extends Controller
 
             $project->updateOrFail($data);
 
-            // #region agent log
-            Log::info('[debug-fb4a59] After updateOrFail', [
-                'hypothesisId' => 'A',
-                'db_en_block_0' => data_get($project->getTranslation('description_blocks', 'en'), '0'),
-            ]);
-            // #endregion
+                // #region agent log
+                $dbColSpans = [];
+                foreach ($project->getTranslation('description_blocks', 'en') as $bi => $block) {
+                    foreach (data_get($block, 'items', []) as $ii => $item) {
+                        $dbColSpans["en[$bi][$ii].col_span"] = data_get($item, 'col_span', 'MISSING');
+                    }
+                }
+                Log::info('[debug-fb4a59] After updateOrFail - DB col values', ['col_spans' => $dbColSpans]);
+                // #endregion
 
             $project->description = $project->processImagesInDescription($project->getAttributes()['description']);
             $project->save();
 
-            // #region agent log
-            $freshProject = $project->fresh();
-            Log::info('[debug-fb4a59] After final save - fresh from DB', [
-                'hypothesisId' => 'C',
-                'fresh_en_block_0' => data_get($freshProject->getTranslation('description_blocks', 'en'), '0'),
-            ]);
-            // #endregion
+                // #region agent log
+                $freshProject = $project->fresh();
+                $freshColSpans = [];
+                foreach ($freshProject->getTranslation('description_blocks', 'en') as $bi => $block) {
+                    foreach (data_get($block, 'items', []) as $ii => $item) {
+                        $freshColSpans["en[$bi][$ii].col_span"] = data_get($item, 'col_span', 'MISSING');
+                    }
+                }
+                Log::info('[debug-fb4a59] After final save (fresh from DB) - col values', ['col_spans' => $freshColSpans]);
+                // #endregion
 
             if ($request->hasFile('hero_image')) {
                 $project->clearMediaCollection($project->mediaHero);
