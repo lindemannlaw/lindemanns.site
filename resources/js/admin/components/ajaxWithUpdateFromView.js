@@ -42,6 +42,15 @@ export function ajaxWithUpdateFromView() {
                     })
                         .then(r => r.json())
                         .then(data => {
+                            // #region agent log
+                            if (data?.html) {
+                                const parser = new DOMParser();
+                                const doc = parser.parseFromString(data.html, 'text/html');
+                                const colSpanFields = [...doc.querySelectorAll('[name*="col_span"]')].map(f => ({name: f.getAttribute('name'), value: f.value}));
+                                const colStartFields = [...doc.querySelectorAll('[name*="col_start"]')].map(f => ({name: f.getAttribute('name'), value: f.value}));
+                                fetch('http://127.0.0.1:7782/ingest/06db3286-f81e-4e20-9adf-adf82c709bcf',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'fb4a59'},body:JSON.stringify({sessionId:'fb4a59',hypothesisId:'C',location:'ajaxWithUpdateFromView.js:modal-refresh-received',message:'Modal refresh HTML received - col fields in refreshed HTML',data:{colSpanFields,colStartFields},timestamp:Date.now()})}).catch(()=>{});
+                            }
+                            // #endregion
                             if (modalEl && data?.html) {
                                 reloadModal(modalEl, data.html);
                             }
