@@ -255,11 +255,18 @@ function initBuilder(builder) {
         }
     });
 
-    // Real-time sync for number inputs
+    // Real-time sync for number inputs + label update on headline change
     builder.addEventListener('input', (event) => {
         const field = event.target.closest('[name]');
-        if (field && field.type === 'number') {
+        if (!field) return;
+        if (field.type === 'number') {
             syncLayoutFieldToSibling(field, builder);
+        }
+        // Update block label when headline changes
+        const name = field.getAttribute('name') || '';
+        if (name.includes('[headline]')) {
+            const block = field.closest('[data-block]');
+            if (block) updateBlockLabel(block, getBlockIndex(block));
         }
     });
 
@@ -858,5 +865,19 @@ function updateBlockLabel(block, blockIndex) {
         : type === 'text_column_row' ? 'Text Column Row'
         : 'Content';
 
-    labelEl.textContent = `Block ${blockIndex + 1} - ${typeLabel}`;
+    // Extract a content preview from the block
+    let preview = '';
+    if (type === 'text_column_row' || type === 'floating_gallery') {
+        const headlineField = block.querySelector(`[data-block-type-panel="${type}"] [name*="[headline]"]:not([disabled])`);
+        preview = headlineField?.value?.trim() || '';
+    }
+    if (!preview && type === 'text') {
+        const textarea = block.querySelector('[data-block-type-panel="text"] [data-wysiwyg]');
+        const raw = textarea?._sunEditor?.getContents?.() ?? textarea?.value ?? '';
+        preview = raw.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+    }
+    if (preview && preview.length > 50) preview = preview.substring(0, 50) + '…';
+
+    const suffix = preview ? ` · ${preview}` : '';
+    labelEl.textContent = `Block ${blockIndex + 1} - ${typeLabel}${suffix}`;
 }
