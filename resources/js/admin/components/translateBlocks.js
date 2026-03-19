@@ -181,44 +181,62 @@ async function handleTranslate(button) {
         button.disabled = false;
         if (approved === null) return; // cancelled
 
-        // Apply approved translations to DE fields
+        // Apply approved translations to DE form fields (for live preview)
         let count = 0;
         const appliedTsKeys = [];
+        const translationsPayload = [];
         for (const [sourceKey, { text: translatedText, isHtml }] of Object.entries(approved)) {
             const targetKey   = sourceKey.replace(`[${sourceLocale}]`, `[${targetLocale}]`);
-            // Use :not([disabled]) to skip fields in hidden/inactive panels
             const targetField = form.querySelector(`[name="${CSS.escape(targetKey)}"]:not([disabled])`)
                              ?? form.querySelector(`[name="${CSS.escape(targetKey)}"]`);
-            if (!targetField) continue;
-
-            targetField.value = translatedText;
-            if (targetField._sunEditor) targetField._sunEditor.setContents(translatedText);
-            targetField.dispatchEvent(new Event('input', { bubbles: true }));
+            if (targetField) {
+                targetField.value = translatedText;
+                if (targetField._sunEditor) targetField._sunEditor.setContents(translatedText);
+                targetField.dispatchEvent(new Event('input', { bubbles: true }));
+            }
             count++;
             appliedTsKeys.push(formNameToTimestampKey(sourceKey));
+            translationsPayload.push({ key: sourceKey, text: translatedText });
         }
 
-        // Update server-side timestamps
-        if (updateTsUrl && appliedTsKeys.length > 0) {
-            postTimestampUpdate(updateTsUrl, 'translation', appliedTsKeys);
-            // Update local timestamps so re-opening dialog reflects the change
-            const now = new Date().toISOString();
-            appliedTsKeys.forEach(k => {
-                timestamps[k] = { ...(timestamps[k] ?? {}), de_translated_at: now };
-            });
-            button.dataset.textTimestamps = JSON.stringify(timestamps);
-        }
+        // Save directly to DB via API
+        const applyUrl = button.dataset.applyTranslationsUrl;
+        if (applyUrl && translationsPayload.length > 0) {
+            try {
+                const saveResp = await fetch(applyUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': csrfToken(),
+                        'X-Requested-With': 'XMLHttpRequest',
+                    },
+                    body: JSON.stringify({
+                        translations: translationsPayload,
+                        timestamp_keys: appliedTsKeys,
+                    }),
+                });
 
-        // Auto-save: trigger form submit so translations persist immediately
-        if (count > 0) {
-            const submitBtn = form.querySelector('[type="submit"]')
-                           ?? form.closest('.modal-content')?.querySelector('[type="submit"]');
-            if (submitBtn) {
-                flashButton(button, `✓ ${count} Feld${count !== 1 ? 'er' : ''} – speichert…`, 3000, titleSpan, originalTitle);
-                submitBtn.click();
-            } else {
-                flashButton(button, `✓ ${count} Feld${count !== 1 ? 'er' : ''} übernommen`, 2500, titleSpan, originalTitle);
+                if (!saveResp.ok) {
+                    const errData = await saveResp.json().catch(() => ({}));
+                    throw new Error(errData.error || `HTTP ${saveResp.status}`);
+                }
+
+                // Update local timestamps
+                const now = new Date().toISOString();
+                appliedTsKeys.forEach(k => {
+                    timestamps[k] = { ...(timestamps[k] ?? {}), de_translated_at: now };
+                });
+                button.dataset.textTimestamps = JSON.stringify(timestamps);
+
+                showToast('success', `${count} Übersetzung${count !== 1 ? 'en' : ''} gespeichert`);
+                flashButton(button, `✓ ${count} gespeichert`, 2500, titleSpan, originalTitle);
+            } catch (saveErr) {
+                console.error('[translateBlocks] Save failed:', saveErr);
+                showToast('error', 'Speichern fehlgeschlagen: ' + saveErr.message);
+                flashButton(button, '✗ Fehler', 2500, titleSpan, originalTitle);
             }
+        } else {
+            flashButton(button, `✓ ${count} übernommen`, 2500, titleSpan, originalTitle);
         }
 
     } catch (error) {
@@ -604,6 +622,29 @@ function flashButton(button, label, duration, titleSpan, originalTitle) {
     const orig = originalTitle ?? span?.textContent ?? '';
     if (span) span.textContent = label;
     setTimeout(() => { if (span) span.textContent = orig; button.disabled = false; }, duration);
+}
+
+/**
+ * Show a toast notification.
+ * @param {'success'|'error'} type
+ * @param {string} message
+ */
+function showToast(type, message) {
+    const bg    = type === 'success' ? '#059669' : '#db2777'; // green / magenta
+    const toast = document.createElement('div');
+    toast.style.cssText = [
+        'position:fixed;bottom:2rem;left:50%;transform:translateX(-50%);z-index:20000;',
+        `background:${bg};color:#fff;padding:0.75rem 1.5rem;border-radius:0.5rem;`,
+        'font-size:0.875rem;font-weight:500;box-shadow:0 4px 12px rgba(0,0,0,0.25);',
+        'opacity:0;transition:opacity 0.3s ease;pointer-events:none;',
+    ].join('');
+    toast.textContent = message;
+    document.body.appendChild(toast);
+    requestAnimationFrame(() => { toast.style.opacity = '1'; });
+    setTimeout(() => {
+        toast.style.opacity = '0';
+        setTimeout(() => toast.remove(), 350);
+    }, 3000);
 }
 
 function hasContent(value) {

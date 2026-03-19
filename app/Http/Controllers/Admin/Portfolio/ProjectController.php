@@ -663,6 +663,114 @@ class ProjectController extends Controller
     }
 
     /**
+     * Apply translations directly to DB (called from translation overlay "Übernehmen").
+     * Accepts a map of form field names → translated values, writes them to the DE locale.
+     */
+    public function applyTranslations(Request $request, Project $project): JsonResponse
+    {
+        $request->validate([
+            'translations'        => 'required|array|min:1',
+            'translations.*.key'  => 'required|string|max:500',
+            'translations.*.text' => 'nullable|string',
+            'timestamp_keys'      => 'nullable|array',
+            'timestamp_keys.*'    => 'string|max:200',
+        ]);
+
+        $translations  = $request->input('translations');
+        $timestampKeys = $request->input('timestamp_keys', []);
+        $targetLocale  = 'de';
+
+        try {
+            DB::beginTransaction();
+
+            // Reload fresh data from DB
+            $project->refresh();
+
+            // Apply translations to each field
+            foreach ($translations as $item) {
+                $formKey = $item['key'];    // e.g. "title[en]" or "description_blocks[en][1][items][0][headline]"
+                $text    = $item['text'] ?? '';
+
+                // Convert EN form key to DE
+                $deKey = str_replace('[en]', "[$targetLocale]", $formKey);
+
+                // Parse the key to determine which field/attribute to update
+                $this->applyTranslationToProject($project, $deKey, $text, $targetLocale);
+            }
+
+            $project->saveOrFail();
+
+            // Update timestamps: mark these fields as translated
+            if (!empty($timestampKeys)) {
+                $now        = now()->toIso8601String();
+                $timestamps = $project->text_timestamps ?? [];
+                foreach ($timestampKeys as $key) {
+                    $timestamps[$key] = array_merge($timestamps[$key] ?? [], ['de_translated_at' => $now]);
+                }
+                DB::table('projects')
+                    ->where('id', $project->id)
+                    ->update(['text_timestamps' => json_encode($timestamps, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)]);
+            }
+
+            DB::commit();
+
+            return response()->json(['ok' => true, 'applied' => count($translations)]);
+
+        } catch (\Throwable $e) {
+            DB::rollBack();
+            Log::error('[applyTranslations] Failed', [
+                'project_id' => $project->id,
+                'error'      => $e->getMessage(),
+            ]);
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * Apply a single translated value to the project model for the DE locale.
+     */
+    private function applyTranslationToProject(Project $project, string $deFormKey, string $value, string $locale): void
+    {
+        // Simple fields: "title[de]", "short_description[de]", etc.
+        if (preg_match('/^(\w+)\[' . $locale . '\]$/', $deFormKey, $m)) {
+            $field = $m[1];
+            if (in_array($field, ['title', 'short_description', 'location', 'seo_title', 'seo_description', 'seo_keywords'])) {
+                $project->setTranslation($field, $locale, $value);
+                return;
+            }
+        }
+
+        // Property details: "property_details[de][property_type]"
+        if (preg_match('/^property_details\[' . $locale . '\]\[(\w+)\]$/', $deFormKey, $m)) {
+            $subField = $m[1];
+            $pd = $project->getTranslation('property_details', $locale) ?? [];
+            $pd[$subField] = $value;
+            $project->setTranslation('property_details', $locale, $pd);
+            return;
+        }
+
+        // Description blocks: "description_blocks[de][1][content]" or "description_blocks[de][1][items][0][headline]"
+        if (preg_match('/^description_blocks\[' . $locale . '\]\[(\d+)\](?:\[items\]\[(\d+)\])?\[(\w+)\]$/', $deFormKey, $m)) {
+            $blockIdx = (int) $m[1];
+            $itemIdx  = $m[2] !== '' ? (int) $m[2] : null;
+            $field    = $m[3];
+
+            $blocks = $project->getTranslation('description_blocks', $locale) ?? [];
+
+            if ($itemIdx !== null) {
+                // Item field
+                $blocks[$blockIdx]['items'][$itemIdx][$field] = $value;
+            } else {
+                // Block-level field
+                $blocks[$blockIdx][$field] = $value;
+            }
+
+            $project->setTranslation('description_blocks', $locale, $blocks);
+            return;
+        }
+    }
+
+    /**
      * Extract all EN text values from the project as a flat key→value map.
      * Keys match the format used in text_timestamps (e.g. "title", "description_blocks.1.items.0.content").
      */
