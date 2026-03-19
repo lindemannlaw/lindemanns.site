@@ -289,7 +289,9 @@ function showReviewOverlay(translations, allItems, changedKeys, timestamps, curr
         document.addEventListener('keydown', onKeydown);
 
         const overlay = buildOverlayEl(translations, allItems, changedKeys, timestamps, currentDeValues);
-        document.body.appendChild(overlay);
+        // Append inside modal so Bootstrap's focus-trap allows typing
+        const modal = document.querySelector('.modal.show') || document.body;
+        modal.appendChild(overlay);
 
         overlay.addEventListener('click', e => { if (e.target === overlay) finish(null); });
         overlay.querySelector('#tro-cancel').addEventListener('click', () => finish(null));
