@@ -632,6 +632,7 @@
                                                                 :name="'description_blocks['. $lang .'][' . $blockIndex . '][items][' . $itemIndex . '][number]'"
                                                                 :value="data_get($item, 'number')"
                                                                 :required="false"
+                                                                :pattern="false"
                                                                 :placeholder="'Number (z.B. 4, 7,093)'"
                                                             />
                                                         </div>
@@ -1002,7 +1003,7 @@
                                 </select>
                             </div>
                             <div class="col-12 col-lg-6">
-                                <x-admin.field.text :name="'description_blocks['. $lang .'][__block__][items][__item__][number]'" :required="false" :placeholder="'Number (z.B. 4, 7,093)'" />
+                                <x-admin.field.text :name="'description_blocks['. $lang .'][__block__][items][__item__][number]'" :required="false" :pattern="false" :placeholder="'Number (z.B. 4, 7,093)'" />
                             </div>
                             <div class="col-12 col-lg-6">
                                 <x-admin.field.text :name="'description_blocks['. $lang .'][__block__][items][__item__][subline]'" :required="false" :placeholder="'Subline (z.B. Beds, +/- Acres)'" />
