@@ -133,6 +133,16 @@ async function handleTranslate(button) {
         if (needsTranslation(timestamps, tsKey)) changedKeys.add(key);
     });
 
+    // Capture current DE values before translation for diff display
+    const currentDeValues = {};
+    itemsWithContent.forEach(({ key }) => {
+        const deKey   = key.replace(`[${sourceLocale}]`, `[${targetLocale}]`);
+        const deField = form.querySelector(`[name="${CSS.escape(deKey)}"]`);
+        if (!deField) return;
+        const val = deField._sunEditor ? deField._sunEditor.getContents() : (deField.value ?? '');
+        if (hasContent(val)) currentDeValues[key] = val;
+    });
+
     try {
         const response = await fetch(translateUrl, {
             method: 'POST',
@@ -157,7 +167,7 @@ async function handleTranslate(button) {
 
         if (titleSpan) titleSpan.textContent = originalTitle;
 
-        const approved = await showReviewOverlay(translations, itemsWithContent, changedKeys, timestamps);
+        const approved = await showReviewOverlay(translations, itemsWithContent, changedKeys, timestamps, currentDeValues);
 
         button.disabled = false;
         if (approved === null) return; // cancelled
@@ -263,7 +273,7 @@ function postTimestampUpdate(url, type, keys) {
 // Review overlay
 // ---------------------------------------------------------------------------
 
-function showReviewOverlay(translations, allItems, changedKeys, timestamps) {
+function showReviewOverlay(translations, allItems, changedKeys, timestamps, currentDeValues = {}) {
     return new Promise(resolve => {
         let settled = false;
 
@@ -278,7 +288,7 @@ function showReviewOverlay(translations, allItems, changedKeys, timestamps) {
         const onKeydown = e => { if (e.key === 'Escape') finish(null); };
         document.addEventListener('keydown', onKeydown);
 
-        const overlay = buildOverlayEl(translations, allItems, changedKeys, timestamps);
+        const overlay = buildOverlayEl(translations, allItems, changedKeys, timestamps, currentDeValues);
         document.body.appendChild(overlay);
 
         overlay.addEventListener('click', e => { if (e.target === overlay) finish(null); });
@@ -299,7 +309,7 @@ function showReviewOverlay(translations, allItems, changedKeys, timestamps) {
     });
 }
 
-function buildOverlayEl(translations, allItems, changedKeys, timestamps) {
+function buildOverlayEl(translations, allItems, changedKeys, timestamps, currentDeValues = {}) {
     const overlay = document.createElement('div');
     overlay.style.cssText = [
         'position:fixed;inset:0;z-index:10050;',
@@ -369,6 +379,18 @@ function buildOverlayEl(translations, allItems, changedKeys, timestamps) {
                     data-key="${escAttr(key)}" data-is-html="false"
                 >${escHtml(translated)}</textarea>`;
 
+        // DE diff: compare current DE value with new DeepL translation
+        const currentDe    = currentDeValues[key] || '';
+        const currentDeClean = currentDe.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+        const newDeClean     = (translated || '').replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+        const hasDeDiff      = currentDeClean && newDeClean && currentDeClean !== newDeClean;
+        const deDiffHtml     = hasDeDiff
+            ? `<div class="small mb-1 p-2 rounded" style="background:#f0fdf4;border:1px dashed #22c55e;">
+                    <span class="text-muted" style="font-size:0.7rem;">\u00C4nderungen DE (alt \u2192 neu):</span><br>
+                    ${highlightDiff(currentDeClean, newDeClean)}
+               </div>`
+            : '';
+
         return `
             <div class="border rounded p-3 d-flex flex-column gap-2 ${isChanged ? 'border-warning' : ''}" data-tro-item>
                 <div class="d-flex align-items-center gap-2">
@@ -386,7 +408,10 @@ function buildOverlayEl(translations, allItems, changedKeys, timestamps) {
                 </div>
                 <div class="d-flex align-items-start gap-2">
                     <span class="flex-shrink-0" style="font-size:1rem;line-height:1.8;" title="Deutsch">\u{1F1E9}\u{1F1EA}</span>
-                    <div class="flex-grow-1">${editorHtml}</div>
+                    <div class="flex-grow-1">
+                        ${deDiffHtml}
+                        ${editorHtml}
+                    </div>
                 </div>
             </div>`;
     }).join('');
