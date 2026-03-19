@@ -413,7 +413,7 @@ class ProjectController extends Controller
             foreach ($localeBlocks as $blockIndex => $block) {
                 $type = data_get($block, 'type');
 
-            if (!in_array($type, ['text', 'floating_gallery', 'text_column', 'text_column_row'], true)) {
+            if (!in_array($type, ['text', 'floating_gallery', 'text_column', 'text_column_row', 'video', 'embed'], true)) {
                 continue;
             }
 
@@ -490,49 +490,122 @@ class ProjectController extends Controller
                     continue;
                 }
 
-                $items = data_get($block, 'items', []);
-                $preparedItems = [];
+                if ($type === 'floating_gallery') {
+                    $items = data_get($block, 'items', []);
+                    $preparedItems = [];
 
-                foreach ($items as $itemIndex => $item) {
-                    $file = data_get($request->file('description_blocks'), "{$locale}.{$blockIndex}.items.{$itemIndex}.image_file");
-                    $oldImage = data_get($item, 'image');
-                    $image = is_string($oldImage) ? $oldImage : null;
+                    foreach ($items as $itemIndex => $item) {
+                        $file = data_get($request->file('description_blocks'), "{$locale}.{$blockIndex}.items.{$itemIndex}.image_file");
+                        $oldImage = data_get($item, 'image');
+                        $image = is_string($oldImage) ? $oldImage : null;
 
-                    if ($file) {
-                        $path = $file->store('projects/description-blocks', 'public');
-                        $image = Storage::url($path);
+                        if ($file) {
+                            $path = $file->store('projects/description-blocks', 'public');
+                            $image = Storage::url($path);
+                        }
+
+                        if (!$image) {
+                            continue;
+                        }
+
+                        $colStart = max(1, min(12, (int)data_get($item, 'col_start', 1)));
+                        $colSpan = max(1, min(12, (int)data_get($item, 'col_span', 12)));
+
+                        if (($colStart + $colSpan - 1) > 12) {
+                            $colSpan = 12 - $colStart + 1;
+                        }
+
+                        $preparedItems[] = [
+                            'headline' => data_get($item, 'headline'),
+                            'subhead' => data_get($item, 'subhead'),
+                            'col_start' => $colStart,
+                            'col_span' => $colSpan,
+                            'image' => $image,
+                        ];
                     }
 
-                    if (!$image) {
+                    if (empty($preparedItems)) {
                         continue;
                     }
 
-                    $colStart = max(1, min(12, (int)data_get($item, 'col_start', 1)));
-                    $colSpan = max(1, min(12, (int)data_get($item, 'col_span', 12)));
-
-                    if (($colStart + $colSpan - 1) > 12) {
-                        $colSpan = 12 - $colStart + 1;
-                    }
-
-                    $preparedItems[] = [
-                        'headline' => data_get($item, 'headline'),
-                        'subhead' => data_get($item, 'subhead'),
-                        'col_start' => $colStart,
-                        'col_span' => $colSpan,
-                        'image' => $image,
-                    ];
-                }
-
-                if (empty($preparedItems)) {
-                    continue;
-                }
-
-                $preparedLocaleBlocks[] = [
+                    $preparedLocaleBlocks[] = [
                         'type'           => 'floating_gallery',
                         'items'          => $preparedItems,
                         'padding_top'    => max(0, min(300, (int)data_get($block, 'padding_top', 0))),
                         'padding_bottom' => max(0, min(300, (int)data_get($block, 'padding_bottom', 0))),
                     ];
+
+                    continue;
+                }
+
+                if ($type === 'video') {
+                    $allowedColors = ['emerald-950', 'emerald-900', 'emerald-800', 'primary', 'gold-bright'];
+                    $colStart = max(1, min(12, (int)data_get($block, 'col_start', 1)));
+                    $colSpan  = max(1, min(12, (int)data_get($block, 'col_span', 12)));
+                    if (($colStart + $colSpan - 1) > 12) {
+                        $colSpan = 12 - $colStart + 1;
+                    }
+
+                    $videoSource = data_get($block, 'video_source', 'upload');
+                    if (!in_array($videoSource, ['upload', 'url'])) {
+                        $videoSource = 'upload';
+                    }
+
+                    // Handle video file upload
+                    $videoFile = data_get($request->file('description_blocks'), "{$locale}.{$blockIndex}.video_file");
+                    $videoOld  = data_get($block, 'video');
+                    $videoPath = is_string($videoOld) ? $videoOld : null;
+                    if ($videoFile) {
+                        $path = $videoFile->store('projects/description-blocks', 'public');
+                        $videoPath = Storage::url($path);
+                    }
+
+                    $headlineColor = data_get($block, 'headline_color', 'primary');
+
+                    $preparedLocaleBlocks[] = [
+                        'type'           => 'video',
+                        'padding_top'    => max(0, min(300, (int)data_get($block, 'padding_top', 0))),
+                        'padding_bottom' => max(0, min(300, (int)data_get($block, 'padding_bottom', 0))),
+                        'col_start'      => $colStart,
+                        'col_span'       => $colSpan,
+                        'video_source'   => $videoSource,
+                        'video'          => $videoPath,
+                        'video_url'      => data_get($block, 'video_url') ?: null,
+                        'headline'       => data_get($block, 'headline') ?: null,
+                        'headline_color' => in_array($headlineColor, $allowedColors) ? $headlineColor : 'primary',
+                        'headline_font'  => data_get($block, 'headline_font', 'pangea') === 'nicevar' ? 'nicevar' : 'pangea',
+                        'headline_line'  => (bool)data_get($block, 'headline_line', false),
+                        'content'        => (string)data_get($block, 'content', ''),
+                        'content_line'   => (bool)data_get($block, 'content_line', false),
+                    ];
+
+                    continue;
+                }
+
+                if ($type === 'embed') {
+                    $colStart = max(1, min(12, (int)data_get($block, 'col_start', 1)));
+                    $colSpan  = max(1, min(12, (int)data_get($block, 'col_span', 12)));
+                    if (($colStart + $colSpan - 1) > 12) {
+                        $colSpan = 12 - $colStart + 1;
+                    }
+
+                    $embedUrl = data_get($block, 'embed_url');
+                    if (!filled($embedUrl)) {
+                        continue;
+                    }
+
+                    $preparedLocaleBlocks[] = [
+                        'type'           => 'embed',
+                        'padding_top'    => max(0, min(300, (int)data_get($block, 'padding_top', 0))),
+                        'padding_bottom' => max(0, min(300, (int)data_get($block, 'padding_bottom', 0))),
+                        'col_start'      => $colStart,
+                        'col_span'       => $colSpan,
+                        'embed_url'      => $embedUrl,
+                        'embed_height'   => max(100, min(2000, (int)data_get($block, 'embed_height', 500))),
+                    ];
+
+                    continue;
+                }
             }
 
             if (empty($preparedLocaleBlocks)) {
@@ -559,6 +632,7 @@ class ProjectController extends Controller
             'text'            => ['content'],
             'text_column_row' => ['headline', 'content', 'link_text', 'link_url'],
             'floating_gallery' => ['headline', 'subhead'],
+            'video'           => ['headline', 'content'],
         ];
 
         foreach ($otherLocales as $otherLocale) {
@@ -578,6 +652,21 @@ class ProjectController extends Controller
                             ? ($otherBlock['content'] ?? '')
                             : ($primaryBlock['content'] ?? ''),
                     ];
+                    continue;
+                }
+
+                // For blocks without items (video, embed): copy layout from primary,
+                // overlay text fields from other at block level
+                if (in_array($primaryType, ['video', 'embed'], true)) {
+                    $merged = $primaryBlock;
+                    if ($otherType === $primaryType) {
+                        foreach ($textFields[$primaryType] ?? [] as $field) {
+                            if (array_key_exists($field, $otherBlock)) {
+                                $merged[$field] = $otherBlock[$field];
+                            }
+                        }
+                    }
+                    $synced[] = $merged;
                     continue;
                 }
 
@@ -612,6 +701,15 @@ class ProjectController extends Controller
                 if ($localeA === $localeB) continue;
                 foreach ($descriptionBlocks[$localeA] ?? [] as $blockIndex => $blockA) {
                     $type = $blockA['type'] ?? null;
+                    // Mirror video file URLs at block level
+                    if ($type === 'video') {
+                        $urlA = $blockA['video'] ?? null;
+                        $urlB = $descriptionBlocks[$localeB][$blockIndex]['video'] ?? null;
+                        if ($urlA && !$urlB) {
+                            $descriptionBlocks[$localeB][$blockIndex]['video'] = $urlA;
+                        }
+                        continue;
+                    }
                     if (!in_array($type, ['text_column_row', 'floating_gallery'], true)) continue;
                     foreach ($blockA['items'] ?? [] as $itemIndex => $itemA) {
                         $urlA = $itemA['image'] ?? null;

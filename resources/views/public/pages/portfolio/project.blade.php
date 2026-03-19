@@ -253,6 +253,71 @@ $galleryImageSizes = [
                                 </figure>
                             @endforeach
                         </div>
+                    @elseif(data_get($blockOrRow, 'type') === 'video')
+                        @php
+                            $vPtop    = max(0, min(300, (int)data_get($blockOrRow, 'padding_top', 0)));
+                            $vPbottom = max(0, min(300, (int)data_get($blockOrRow, 'padding_bottom', 0)));
+                            $vColStart = max(1, min(12, (int)data_get($blockOrRow, 'col_start', 1)));
+                            $vColSpan  = max(1, min(12, (int)data_get($blockOrRow, 'col_span', 12)));
+                            $videoSource = data_get($blockOrRow, 'video_source', 'upload');
+                            $videoFile   = data_get($blockOrRow, 'video');
+                            $videoUrl    = data_get($blockOrRow, 'video_url');
+                            $headlineColors = [
+                                'emerald-950' => 'var(--color-primary-brand-950-darkest)',
+                                'emerald-900' => 'var(--color-primary-brand-900-darker-silent)',
+                                'emerald-800' => 'var(--color-primary-brand-800-dark)',
+                                'primary'     => 'var(--color-font-primary)',
+                                'gold-bright' => 'var(--color-gold-lighter)',
+                            ];
+                            $vhColor = $headlineColors[data_get($blockOrRow, 'headline_color', 'primary')] ?? 'var(--color-font-primary)';
+                            $vhFont  = data_get($blockOrRow, 'headline_font', 'pangea') === 'nicevar' ? 'font-nicevar' : '';
+                        @endphp
+                        <div class="project-video-block"
+                             style="--col-start: {{ $vColStart }}; --col-span: {{ $vColSpan }};{{ $vPtop > 0 ? ' padding-top:' . $vPtop . 'px;' : '' }}{{ $vPbottom > 0 ? ' padding-bottom:' . $vPbottom . 'px;' : '' }}">
+                            @if($videoSource === 'url' && filled($videoUrl))
+                                @php
+                                    // Convert YouTube/Vimeo URLs to embed format
+                                    $embedVideoUrl = $videoUrl;
+                                    if (preg_match('/(?:youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]+)/', $videoUrl, $ytMatch)) {
+                                        $embedVideoUrl = 'https://www.youtube.com/embed/' . $ytMatch[1];
+                                    } elseif (preg_match('/vimeo\.com\/(\d+)/', $videoUrl, $vimeoMatch)) {
+                                        $embedVideoUrl = 'https://player.vimeo.com/video/' . $vimeoMatch[1];
+                                    }
+                                @endphp
+                                <div class="project-video-responsive">
+                                    <iframe src="{{ $embedVideoUrl }}" frameborder="0" allowfullscreen allow="autoplay; encrypted-media" loading="lazy"></iframe>
+                                </div>
+                            @elseif($videoSource === 'upload' && filled($videoFile))
+                                <video src="{{ $videoFile }}" controls class="project-video-player" preload="metadata"></video>
+                            @endif
+
+                            @if(filled(data_get($blockOrRow, 'headline')))
+                                <h3
+                                    class="{{ trim((data_get($blockOrRow, 'headline_line') ? 'has-line ' : '') . $vhFont) }}"
+                                    style="color: {{ $vhColor }}"
+                                >{{ data_get($blockOrRow, 'headline') }}</h3>
+                            @endif
+                            @if(filled(data_get($blockOrRow, 'content')))
+                                <div class="project-video-content {{ data_get($blockOrRow, 'content_line') ? 'has-line' : '' }}">
+                                    {!! data_get($blockOrRow, 'content') !!}
+                                </div>
+                            @endif
+                        </div>
+                    @elseif(data_get($blockOrRow, 'type') === 'embed')
+                        @php
+                            $ePtop    = max(0, min(300, (int)data_get($blockOrRow, 'padding_top', 0)));
+                            $ePbottom = max(0, min(300, (int)data_get($blockOrRow, 'padding_bottom', 0)));
+                            $eColStart = max(1, min(12, (int)data_get($blockOrRow, 'col_start', 1)));
+                            $eColSpan  = max(1, min(12, (int)data_get($blockOrRow, 'col_span', 12)));
+                            $embedUrl    = data_get($blockOrRow, 'embed_url');
+                            $embedHeight = max(100, min(2000, (int)data_get($blockOrRow, 'embed_height', 500)));
+                        @endphp
+                        @if(filled($embedUrl))
+                            <div class="project-embed-block"
+                                 style="--col-start: {{ $eColStart }}; --col-span: {{ $eColSpan }};{{ $ePtop > 0 ? ' padding-top:' . $ePtop . 'px;' : '' }}{{ $ePbottom > 0 ? ' padding-bottom:' . $ePbottom . 'px;' : '' }}">
+                                <iframe src="{{ $embedUrl }}" width="100%" height="{{ $embedHeight }}" frameborder="0" allowfullscreen allow="autoplay; encrypted-media; xr-spatial-tracking" loading="lazy" style="border: 0;"></iframe>
+                            </div>
+                        @endif
                     @else
                         <div class="project-description-content">
                             {!! data_get($blockOrRow, 'content') !!}

@@ -55,7 +55,7 @@ class UpdateRequest extends FormRequest
             $rules['short_description.' . $locale] = ['required', 'string'];
             $rules['description.' . $locale] = ['nullable', 'string'];
             $rules['description_blocks.' . $locale] = ['required', 'array', 'min:1'];
-            $rules['description_blocks.' . $locale . '.*.type'] = ['required', 'string', 'in:text,floating_gallery,text_column_row'];
+            $rules['description_blocks.' . $locale . '.*.type'] = ['required', 'string', 'in:text,floating_gallery,text_column_row,video,embed'];
             $rules['description_blocks.' . $locale . '.*.content'] = ['nullable', 'string'];
             $rules['description_blocks.' . $locale . '.*.padding_top'] = ['nullable', 'integer', 'min:0', 'max:300'];
             $rules['description_blocks.' . $locale . '.*.padding_bottom'] = ['nullable', 'integer', 'min:0', 'max:300'];
@@ -78,6 +78,22 @@ class UpdateRequest extends FormRequest
             $rules['description_blocks.' . $locale . '.*.items.*.image_alignment'] = ['nullable', 'string', 'in:top,left,right'];
             $rules['description_blocks.' . $locale . '.*.items.*.image_col_span'] = ['nullable', 'integer', 'min:1', 'max:12'];
             $rules['description_blocks.' . $locale . '.*.items.*.text_col_span'] = ['nullable', 'integer', 'min:1', 'max:12'];
+            // video block fields
+            $rules['description_blocks.' . $locale . '.*.video_source'] = ['nullable', 'string', 'in:upload,url'];
+            $rules['description_blocks.' . $locale . '.*.video'] = ['nullable', 'string', 'max:2048'];
+            $rules['description_blocks.' . $locale . '.*.video_url'] = ['nullable', 'string', 'max:2048'];
+            $rules['description_blocks.' . $locale . '.*.video_file'] = ['nullable', 'file', 'mimetypes:video/mp4,video/webm,video/ogg,video/quicktime', 'max:102400'];
+            $rules['description_blocks.' . $locale . '.*.col_span'] = ['nullable', 'integer', 'min:1', 'max:12'];
+            $rules['description_blocks.' . $locale . '.*.col_start'] = ['nullable', 'integer', 'min:1', 'max:12'];
+            // embed block fields
+            $rules['description_blocks.' . $locale . '.*.embed_url'] = ['nullable', 'string', 'max:2048'];
+            $rules['description_blocks.' . $locale . '.*.embed_height'] = ['nullable', 'integer', 'min:100', 'max:2000'];
+            // block-level headline/content (used by video block)
+            $rules['description_blocks.' . $locale . '.*.headline'] = ['nullable', 'string', 'max:255'];
+            $rules['description_blocks.' . $locale . '.*.headline_color'] = ['nullable', 'string', 'in:emerald-950,emerald-900,emerald-800,primary,gold-bright'];
+            $rules['description_blocks.' . $locale . '.*.headline_font'] = ['nullable', 'string', 'in:pangea,nicevar'];
+            $rules['description_blocks.' . $locale . '.*.headline_line'] = ['nullable'];
+            $rules['description_blocks.' . $locale . '.*.content_line'] = ['nullable'];
             $rules['location.' . $locale] = ['required', 'string', 'max:255'];
             $rules['tags.' . $locale . '.*'] = ['nullable', 'string', 'max:255'];
             $rules['property_details.' . $locale . '.*'] = ['nullable', 'string', 'max:255'];

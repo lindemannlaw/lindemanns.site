@@ -96,6 +96,8 @@
                                         <option value="text" {{ data_get($block, 'type', 'text') === 'text' ? 'selected' : null }}>Text</option>
                                         <option value="floating_gallery" {{ data_get($block, 'type') === 'floating_gallery' ? 'selected' : null }}>Floating Image Gallery</option>
                                         <option value="text_column_row" {{ data_get($block, 'type') === 'text_column_row' ? 'selected' : null }}>Text Column Row</option>
+                                        <option value="video" {{ data_get($block, 'type') === 'video' ? 'selected' : null }}>Video</option>
+                                        <option value="embed" {{ data_get($block, 'type') === 'embed' ? 'selected' : null }}>3D Tour / Embed</option>
                                     </select>
                                     <x-admin.button data-block-add-after class="p-2 ms-auto" :btn="'btn-outline-success'" :iconName="'plus-circle'" />
                                     <x-admin.button data-block-duplicate class="p-2" :btn="'btn-outline-secondary'" :iconName="'copy'" />
@@ -366,6 +368,192 @@
                                         </div>
                                     </div>
 
+                                    {{-- VIDEO --}}
+                                    <div data-block-type-panel="video" class="d-flex flex-column gap-3 {{ data_get($block, 'type') === 'video' ? null : 'd-none' }}">
+                                        <div class="row g-2">
+                                            <div class="col-6">
+                                                <x-admin.field.padding-select
+                                                    :name="'description_blocks['. $lang .'][' . $blockIndex . '][padding_top]'"
+                                                    :value="data_get($block, 'padding_top', 0)"
+                                                    :placeholder="'Padding oben'"
+                                                />
+                                            </div>
+                                            <div class="col-6">
+                                                <x-admin.field.padding-select
+                                                    :name="'description_blocks['. $lang .'][' . $blockIndex . '][padding_bottom]'"
+                                                    :value="data_get($block, 'padding_bottom', 0)"
+                                                    :placeholder="'Padding unten'"
+                                                />
+                                            </div>
+                                        </div>
+                                        <div class="row g-2">
+                                            <div class="col-6">
+                                                <x-admin.field.number
+                                                    :name="'description_blocks['. $lang .'][' . $blockIndex . '][col_span]'"
+                                                    :value="data_get($block, 'col_span', 12)"
+                                                    :placeholder="'Anzahl Spalten (1-12)'"
+                                                    :fieldAttrs="'min=1 max=12'"
+                                                />
+                                            </div>
+                                            <div class="col-6">
+                                                <x-admin.field.number
+                                                    :name="'description_blocks['. $lang .'][' . $blockIndex . '][col_start]'"
+                                                    :value="data_get($block, 'col_start', 1)"
+                                                    :placeholder="'Start Spalte (1-12)'"
+                                                    :fieldAttrs="'min=1 max=12'"
+                                                />
+                                            </div>
+                                        </div>
+
+                                        {{-- Video Quelle --}}
+                                        <div class="border-top pt-3">
+                                            <p class="text-muted small mb-2 fw-semibold">Video</p>
+                                            <div class="mb-2">
+                                                <select class="form-select form-select-sm" name="description_blocks[{{ $lang }}][{{ $blockIndex }}][video_source]" data-video-source-select>
+                                                    <option value="upload" {{ data_get($block, 'video_source', 'upload') === 'upload' ? 'selected' : '' }}>Datei hochladen</option>
+                                                    <option value="url" {{ data_get($block, 'video_source') === 'url' ? 'selected' : '' }}>URL einbetten (YouTube, Vimeo, etc.)</option>
+                                                </select>
+                                            </div>
+                                            <div data-video-upload-panel class="{{ data_get($block, 'video_source') === 'url' ? 'd-none' : '' }}">
+                                                <input type="hidden"
+                                                    name="description_blocks[{{ $lang }}][{{ $blockIndex }}][video]"
+                                                    value="{{ data_get($block, 'video') }}"
+                                                    data-video-hidden
+                                                >
+                                                @if(filled(data_get($block, 'video')) && data_get($block, 'video_source', 'upload') === 'upload')
+                                                    <div class="mb-2">
+                                                        <video src="{{ data_get($block, 'video') }}" controls style="max-width: 300px; max-height: 200px;"></video>
+                                                    </div>
+                                                @endif
+                                                <input type="file"
+                                                    class="form-control form-control-sm"
+                                                    name="description_blocks[{{ $lang }}][{{ $blockIndex }}][video_file]"
+                                                    accept="video/mp4,video/webm,video/ogg"
+                                                >
+                                            </div>
+                                            <div data-video-url-panel class="{{ data_get($block, 'video_source') !== 'url' ? 'd-none' : '' }}">
+                                                <x-admin.field.text
+                                                    :name="'description_blocks['. $lang .'][' . $blockIndex . '][video_url]'"
+                                                    :value="data_get($block, 'video_url')"
+                                                    :required="false"
+                                                    :placeholder="'Video URL (YouTube, Vimeo, etc.)'"
+                                                />
+                                            </div>
+                                        </div>
+
+                                        {{-- Text --}}
+                                        <div class="border-top pt-3">
+                                            <p class="text-muted small mb-2 fw-semibold">Text (optional)</p>
+                                            <div class="row g-2">
+                                                <div class="col-12">
+                                                    <div class="form-check form-switch">
+                                                        <input class="form-check-input" type="checkbox" value="1"
+                                                            name="description_blocks[{{ $lang }}][{{ $blockIndex }}][headline_line]"
+                                                            id="vid_hl_line_{{ $lang }}_{{ $blockIndex }}"
+                                                            {{ data_get($block, 'headline_line') ? 'checked' : '' }}>
+                                                        <label class="form-check-label" for="vid_hl_line_{{ $lang }}_{{ $blockIndex }}">Linie vor Headline</label>
+                                                    </div>
+                                                </div>
+                                                <div class="col-12 col-lg-6">
+                                                    <x-admin.field.text
+                                                        :name="'description_blocks['. $lang .'][' . $blockIndex . '][headline]'"
+                                                        :value="data_get($block, 'headline')"
+                                                        :required="false"
+                                                        :placeholder="'Headline (optional)'"
+                                                    />
+                                                </div>
+                                                <div class="col-6 col-lg-4">
+                                                    <select class="form-select form-select-sm" name="description_blocks[{{ $lang }}][{{ $blockIndex }}][headline_color]">
+                                                        @foreach(['primary' => 'Primary (Dark)', 'emerald-950' => 'Emerald 950', 'emerald-900' => 'Emerald 900', 'emerald-800' => 'Emerald 800', 'gold-bright' => 'Gold Bright'] as $val => $label)
+                                                            <option value="{{ $val }}" {{ data_get($block, 'headline_color', 'primary') === $val ? 'selected' : '' }}>{{ $label }}</option>
+                                                        @endforeach
+                                                    </select>
+                                                </div>
+                                                <div class="col-6 col-lg-2 d-flex align-items-center">
+                                                    <div class="form-check form-switch mb-0">
+                                                        <input class="form-check-input" type="checkbox" value="nicevar"
+                                                            name="description_blocks[{{ $lang }}][{{ $blockIndex }}][headline_font]"
+                                                            id="vid_hf_{{ $lang }}_{{ $blockIndex }}"
+                                                            {{ data_get($block, 'headline_font') === 'nicevar' ? 'checked' : '' }}>
+                                                        <label class="form-check-label small" for="vid_hf_{{ $lang }}_{{ $blockIndex }}">NiceVar</label>
+                                                    </div>
+                                                </div>
+                                                <div class="col-12">
+                                                    <div class="form-check form-switch">
+                                                        <input class="form-check-input" type="checkbox" value="1"
+                                                            name="description_blocks[{{ $lang }}][{{ $blockIndex }}][content_line]"
+                                                            id="vid_content_line_{{ $lang }}_{{ $blockIndex }}"
+                                                            {{ data_get($block, 'content_line') ? 'checked' : '' }}>
+                                                        <label class="form-check-label" for="vid_content_line_{{ $lang }}_{{ $blockIndex }}">Linie vor Text</label>
+                                                    </div>
+                                                </div>
+                                                <div class="col-12">
+                                                    <x-admin.field.wysiwyg
+                                                        :name="'description_blocks['. $lang .'][' . $blockIndex . '][content]'"
+                                                        :placeholder="'Text (optional)'"
+                                                        :value="data_get($block, 'content')"
+                                                        :height="200"
+                                                        :buttons="'blockquote|list'"
+                                                    />
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {{-- EMBED (3D Tour) --}}
+                                    <div data-block-type-panel="embed" class="d-flex flex-column gap-3 {{ data_get($block, 'type') === 'embed' ? null : 'd-none' }}">
+                                        <div class="row g-2">
+                                            <div class="col-6">
+                                                <x-admin.field.padding-select
+                                                    :name="'description_blocks['. $lang .'][' . $blockIndex . '][padding_top]'"
+                                                    :value="data_get($block, 'padding_top', 0)"
+                                                    :placeholder="'Padding oben'"
+                                                />
+                                            </div>
+                                            <div class="col-6">
+                                                <x-admin.field.padding-select
+                                                    :name="'description_blocks['. $lang .'][' . $blockIndex . '][padding_bottom]'"
+                                                    :value="data_get($block, 'padding_bottom', 0)"
+                                                    :placeholder="'Padding unten'"
+                                                />
+                                            </div>
+                                        </div>
+                                        <div class="row g-2">
+                                            <div class="col-6">
+                                                <x-admin.field.number
+                                                    :name="'description_blocks['. $lang .'][' . $blockIndex . '][col_span]'"
+                                                    :value="data_get($block, 'col_span', 12)"
+                                                    :placeholder="'Anzahl Spalten (1-12)'"
+                                                    :fieldAttrs="'min=1 max=12'"
+                                                />
+                                            </div>
+                                            <div class="col-6">
+                                                <x-admin.field.number
+                                                    :name="'description_blocks['. $lang .'][' . $blockIndex . '][col_start]'"
+                                                    :value="data_get($block, 'col_start', 1)"
+                                                    :placeholder="'Start Spalte (1-12)'"
+                                                    :fieldAttrs="'min=1 max=12'"
+                                                />
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <x-admin.field.text
+                                                :name="'description_blocks['. $lang .'][' . $blockIndex . '][embed_url]'"
+                                                :value="data_get($block, 'embed_url')"
+                                                :required="false"
+                                                :placeholder="'Embed URL (3D Tour, etc.)'"
+                                            />
+                                        </div>
+                                        <div>
+                                            <x-admin.field.number
+                                                :name="'description_blocks['. $lang .'][' . $blockIndex . '][embed_height]'"
+                                                :value="data_get($block, 'embed_height', 500)"
+                                                :placeholder="'Höhe in Pixel (100-2000)'"
+                                                :fieldAttrs="'min=100 max=2000'"
+                                            />
+                                        </div>
+                                    </div>
+
                                 </div>
                             </div>
                         @endforeach
@@ -397,6 +585,8 @@
                                 <option value="text" selected>Text</option>
                                 <option value="floating_gallery">Floating Image Gallery</option>
                                 <option value="text_column_row">Text Column Row</option>
+                                <option value="video">Video</option>
+                                <option value="embed">3D Tour / Embed</option>
                             </select>
                             <x-admin.button data-block-add-after class="p-2 ms-auto" :btn="'btn-outline-success'" :iconName="'plus-circle'" />
                             <x-admin.button data-block-duplicate class="p-2" :btn="'btn-outline-secondary'" :iconName="'copy'" />
@@ -432,6 +622,102 @@
                                     <div class="col-6">
                                         <x-admin.field.padding-select :name="'description_blocks['. $lang .'][__block__][padding_bottom]'" :value="0" :placeholder="'Padding unten'" />
                                     </div>
+                                </div>
+                            </div>
+                            <div data-block-type-panel="video" class="d-flex flex-column gap-3 d-none">
+                                <div class="row g-2">
+                                    <div class="col-6">
+                                        <x-admin.field.padding-select :name="'description_blocks['. $lang .'][__block__][padding_top]'" :value="0" :placeholder="'Padding oben'" />
+                                    </div>
+                                    <div class="col-6">
+                                        <x-admin.field.padding-select :name="'description_blocks['. $lang .'][__block__][padding_bottom]'" :value="0" :placeholder="'Padding unten'" />
+                                    </div>
+                                </div>
+                                <div class="row g-2">
+                                    <div class="col-6">
+                                        <x-admin.field.number :name="'description_blocks['. $lang .'][__block__][col_span]'" :value="12" :placeholder="'Anzahl Spalten (1-12)'" :fieldAttrs="'min=1 max=12'" />
+                                    </div>
+                                    <div class="col-6">
+                                        <x-admin.field.number :name="'description_blocks['. $lang .'][__block__][col_start]'" :value="1" :placeholder="'Start Spalte (1-12)'" :fieldAttrs="'min=1 max=12'" />
+                                    </div>
+                                </div>
+                                <div class="border-top pt-3">
+                                    <p class="text-muted small mb-2 fw-semibold">Video</p>
+                                    <div class="mb-2">
+                                        <select class="form-select form-select-sm" name="description_blocks[{{ $lang }}][__block__][video_source]" data-video-source-select>
+                                            <option value="upload" selected>Datei hochladen</option>
+                                            <option value="url">URL einbetten (YouTube, Vimeo, etc.)</option>
+                                        </select>
+                                    </div>
+                                    <div data-video-upload-panel>
+                                        <input type="hidden" name="description_blocks[{{ $lang }}][__block__][video]" value="" data-video-hidden>
+                                        <input type="file" class="form-control form-control-sm" name="description_blocks[{{ $lang }}][__block__][video_file]" accept="video/mp4,video/webm,video/ogg">
+                                    </div>
+                                    <div data-video-url-panel class="d-none">
+                                        <x-admin.field.text :name="'description_blocks['. $lang .'][__block__][video_url]'" :required="false" :placeholder="'Video URL (YouTube, Vimeo, etc.)'" />
+                                    </div>
+                                </div>
+                                <div class="border-top pt-3">
+                                    <p class="text-muted small mb-2 fw-semibold">Text (optional)</p>
+                                    <div class="row g-2">
+                                        <div class="col-12">
+                                            <div class="form-check form-switch">
+                                                <input class="form-check-input" type="checkbox" value="1" name="description_blocks[{{ $lang }}][__block__][headline_line]">
+                                                <label class="form-check-label">Linie vor Headline</label>
+                                            </div>
+                                        </div>
+                                        <div class="col-12 col-lg-6">
+                                            <x-admin.field.text :name="'description_blocks['. $lang .'][__block__][headline]'" :required="false" :placeholder="'Headline (optional)'" />
+                                        </div>
+                                        <div class="col-6 col-lg-4">
+                                            <select class="form-select form-select-sm" name="description_blocks[{{ $lang }}][__block__][headline_color]">
+                                                <option value="primary" selected>Primary (Dark)</option>
+                                                <option value="emerald-950">Emerald 950</option>
+                                                <option value="emerald-900">Emerald 900</option>
+                                                <option value="emerald-800">Emerald 800</option>
+                                                <option value="gold-bright">Gold Bright</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-6 col-lg-2 d-flex align-items-center">
+                                            <div class="form-check form-switch mb-0">
+                                                <input class="form-check-input" type="checkbox" value="nicevar" name="description_blocks[{{ $lang }}][__block__][headline_font]">
+                                                <label class="form-check-label small">NiceVar</label>
+                                            </div>
+                                        </div>
+                                        <div class="col-12">
+                                            <div class="form-check form-switch">
+                                                <input class="form-check-input" type="checkbox" value="1" name="description_blocks[{{ $lang }}][__block__][content_line]">
+                                                <label class="form-check-label">Linie vor Text</label>
+                                            </div>
+                                        </div>
+                                        <div class="col-12">
+                                            <x-admin.field.wysiwyg :name="'description_blocks['. $lang .'][__block__][content]'" :placeholder="'Text (optional)'" :height="200" :buttons="'blockquote|list'" />
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div data-block-type-panel="embed" class="d-flex flex-column gap-3 d-none">
+                                <div class="row g-2">
+                                    <div class="col-6">
+                                        <x-admin.field.padding-select :name="'description_blocks['. $lang .'][__block__][padding_top]'" :value="0" :placeholder="'Padding oben'" />
+                                    </div>
+                                    <div class="col-6">
+                                        <x-admin.field.padding-select :name="'description_blocks['. $lang .'][__block__][padding_bottom]'" :value="0" :placeholder="'Padding unten'" />
+                                    </div>
+                                </div>
+                                <div class="row g-2">
+                                    <div class="col-6">
+                                        <x-admin.field.number :name="'description_blocks['. $lang .'][__block__][col_span]'" :value="12" :placeholder="'Anzahl Spalten (1-12)'" :fieldAttrs="'min=1 max=12'" />
+                                    </div>
+                                    <div class="col-6">
+                                        <x-admin.field.number :name="'description_blocks['. $lang .'][__block__][col_start]'" :value="1" :placeholder="'Start Spalte (1-12)'" :fieldAttrs="'min=1 max=12'" />
+                                    </div>
+                                </div>
+                                <div>
+                                    <x-admin.field.text :name="'description_blocks['. $lang .'][__block__][embed_url]'" :required="false" :placeholder="'Embed URL (3D Tour, etc.)'" />
+                                </div>
+                                <div>
+                                    <x-admin.field.number :name="'description_blocks['. $lang .'][__block__][embed_height]'" :value="500" :placeholder="'Höhe in Pixel (100-2000)'" :fieldAttrs="'min=100 max=2000'" />
                                 </div>
                             </div>
                         </div>

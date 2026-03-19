@@ -52,7 +52,7 @@ class StoreRequest extends FormRequest
             $rules['short_description.' . $locale] = ['required', 'string'];
             $rules['description.' . $locale] = ['nullable', 'string'];
             $rules['description_blocks.' . $locale] = ['required', 'array', 'min:1'];
-            $rules['description_blocks.' . $locale . '.*.type'] = ['required', 'string', 'in:text,floating_gallery'];
+            $rules['description_blocks.' . $locale . '.*.type'] = ['required', 'string', 'in:text,floating_gallery,text_column_row,video,embed'];
             $rules['description_blocks.' . $locale . '.*.content'] = ['nullable', 'string'];
             $rules['description_blocks.' . $locale . '.*.items'] = ['nullable', 'array'];
             $rules['description_blocks.' . $locale . '.*.items.*.headline'] = ['nullable', 'string', 'max:255'];

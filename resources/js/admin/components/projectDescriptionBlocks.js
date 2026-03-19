@@ -248,6 +248,22 @@ function initBuilder(builder) {
             return;
         }
 
+        // Video source toggle (upload ↔ url)
+        const videoSourceSelect = event.target.closest('[data-video-source-select]');
+        if (videoSourceSelect) {
+            const block = videoSourceSelect.closest('[data-block]');
+            if (block) {
+                const uploadPanel = block.querySelector('[data-video-upload-panel]');
+                const urlPanel    = block.querySelector('[data-video-url-panel]');
+                if (uploadPanel && urlPanel) {
+                    uploadPanel.classList.toggle('d-none', videoSourceSelect.value === 'url');
+                    urlPanel.classList.toggle('d-none', videoSourceSelect.value !== 'url');
+                }
+            }
+            syncLayoutFieldToSibling(videoSourceSelect, builder);
+            return;
+        }
+
         // All other layout fields (skip file inputs)
         const field = event.target.closest('[name]');
         if (field && field.type !== 'file') {
@@ -284,7 +300,7 @@ function handleBlockTypeChange(typeSelect, builder) {
 
     setBlockType(block, typeSelect.value);
 
-    if (typeSelect.value === 'text') {
+    if (typeSelect.value === 'text' || typeSelect.value === 'video') {
         ensureWysiwygForBlock(block);
     }
 
@@ -311,6 +327,7 @@ function handleBlockTypeChange(typeSelect, builder) {
 
             if (typeSelect.value === 'floating_gallery') ensureGalleryItem(siblingBlock, sibling);
             if (typeSelect.value === 'text_column_row')  ensureTcItem(siblingBlock, sibling);
+            if (typeSelect.value === 'video') ensureWysiwygForBlock(siblingBlock);
 
             reindexBuilder(sibling);
         }
@@ -750,20 +767,26 @@ function getTemplateFromPane(builder, selector) {
 // ─── Block state helpers ──────────────────────────────────────────────────────
 
 function setBlockType(block, type) {
-    const typeInput  = block.querySelector('[data-block-type-input]');
-    const textPanel  = block.querySelector('[data-block-type-panel="text"]');
+    const typeInput    = block.querySelector('[data-block-type-input]');
+    const textPanel    = block.querySelector('[data-block-type-panel="text"]');
     const galleryPanel = block.querySelector('[data-block-type-panel="floating_gallery"]');
-    const tcRowPanel = block.querySelector('[data-block-type-panel="text_column_row"]');
+    const tcRowPanel   = block.querySelector('[data-block-type-panel="text_column_row"]');
+    const videoPanel   = block.querySelector('[data-block-type-panel="video"]');
+    const embedPanel   = block.querySelector('[data-block-type-panel="embed"]');
 
     if (typeInput) typeInput.value = type;
 
     textPanel?.classList.toggle('d-none', type !== 'text');
     galleryPanel?.classList.toggle('d-none', type !== 'floating_gallery');
     tcRowPanel?.classList.toggle('d-none', type !== 'text_column_row');
+    videoPanel?.classList.toggle('d-none', type !== 'video');
+    embedPanel?.classList.toggle('d-none', type !== 'embed');
 
     togglePanelRequired(textPanel,    type === 'text');
     togglePanelRequired(galleryPanel, type === 'floating_gallery');
     togglePanelRequired(tcRowPanel,   type === 'text_column_row');
+    togglePanelRequired(videoPanel,   type === 'video');
+    togglePanelRequired(embedPanel,   type === 'embed');
 }
 
 function ensureWysiwygForBlock(block) {
@@ -858,6 +881,8 @@ function updateBlockLabel(block, blockIndex) {
     const type = block.querySelector('[data-block-type-input]')?.value || 'text';
     const typeLabel = type === 'floating_gallery' ? 'Floating Gallery'
         : type === 'text_column_row' ? 'Text Column Row'
+        : type === 'video' ? 'Video'
+        : type === 'embed' ? '3D Tour / Embed'
         : 'Content';
 
     // Extract a content preview from the block
@@ -865,6 +890,14 @@ function updateBlockLabel(block, blockIndex) {
     if (type === 'text_column_row' || type === 'floating_gallery') {
         const headlineField = block.querySelector(`[data-block-type-panel="${type}"] [name*="[headline]"]:not([disabled])`);
         preview = headlineField?.value?.trim() || '';
+    }
+    if (!preview && type === 'video') {
+        const headlineField = block.querySelector('[data-block-type-panel="video"] [name*="[headline]"]:not([disabled])');
+        preview = headlineField?.value?.trim() || '';
+    }
+    if (!preview && type === 'embed') {
+        const urlField = block.querySelector('[data-block-type-panel="embed"] [name*="[embed_url]"]:not([disabled])');
+        preview = urlField?.value?.trim() || '';
     }
     if (!preview && type === 'text') {
         const textarea = block.querySelector('[data-block-type-panel="text"] [data-wysiwyg]');
