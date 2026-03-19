@@ -135,13 +135,22 @@ async function handleTranslate(button) {
 
     // Capture current DE values before translation for diff display
     const currentDeValues = {};
+    const emptyDeKeys = new Set(); // Track fields where DE is empty but EN has content
     itemsWithContent.forEach(({ key }) => {
         const deKey   = key.replace(`[${sourceLocale}]`, `[${targetLocale}]`);
-        const deField = form.querySelector(`[name="${CSS.escape(deKey)}"]`);
+        const deField = form.querySelector(`[name="${CSS.escape(deKey)}"]:not([disabled])`)
+                     ?? form.querySelector(`[name="${CSS.escape(deKey)}"]`);
         if (!deField) return;
         const val = deField._sunEditor ? deField._sunEditor.getContents() : (deField.value ?? '');
-        if (hasContent(val)) currentDeValues[key] = val;
+        if (hasContent(val)) {
+            currentDeValues[key] = val;
+        } else {
+            emptyDeKeys.add(key); // DE is empty → needs translation
+        }
     });
+
+    // Also mark fields where DE is empty as needing translation
+    emptyDeKeys.forEach(key => changedKeys.add(key));
 
     try {
         const response = await fetch(translateUrl, {
@@ -167,7 +176,7 @@ async function handleTranslate(button) {
 
         if (titleSpan) titleSpan.textContent = originalTitle;
 
-        const approved = await showReviewOverlay(translations, itemsWithContent, changedKeys, timestamps, currentDeValues);
+        const approved = await showReviewOverlay(translations, itemsWithContent, changedKeys, timestamps, currentDeValues, emptyDeKeys);
 
         button.disabled = false;
         if (approved === null) return; // cancelled
@@ -177,7 +186,9 @@ async function handleTranslate(button) {
         const appliedTsKeys = [];
         for (const [sourceKey, { text: translatedText, isHtml }] of Object.entries(approved)) {
             const targetKey   = sourceKey.replace(`[${sourceLocale}]`, `[${targetLocale}]`);
-            const targetField = form.querySelector(`[name="${CSS.escape(targetKey)}"]`);
+            // Use :not([disabled]) to skip fields in hidden/inactive panels
+            const targetField = form.querySelector(`[name="${CSS.escape(targetKey)}"]:not([disabled])`)
+                             ?? form.querySelector(`[name="${CSS.escape(targetKey)}"]`);
             if (!targetField) continue;
 
             targetField.value = translatedText;
@@ -273,7 +284,7 @@ function postTimestampUpdate(url, type, keys) {
 // Review overlay
 // ---------------------------------------------------------------------------
 
-function showReviewOverlay(translations, allItems, changedKeys, timestamps, currentDeValues = {}) {
+function showReviewOverlay(translations, allItems, changedKeys, timestamps, currentDeValues = {}, emptyDeKeys = new Set()) {
     return new Promise(resolve => {
         let settled = false;
 
@@ -288,7 +299,7 @@ function showReviewOverlay(translations, allItems, changedKeys, timestamps, curr
         const onKeydown = e => { if (e.key === 'Escape') finish(null); };
         document.addEventListener('keydown', onKeydown);
 
-        const overlay = buildOverlayEl(translations, allItems, changedKeys, timestamps, currentDeValues);
+        const overlay = buildOverlayEl(translations, allItems, changedKeys, timestamps, currentDeValues, emptyDeKeys);
         // Append inside modal so Bootstrap's focus-trap allows typing
         const modal = document.querySelector('.modal.show') || document.body;
         modal.appendChild(overlay);
@@ -311,7 +322,7 @@ function showReviewOverlay(translations, allItems, changedKeys, timestamps, curr
     });
 }
 
-function buildOverlayEl(translations, allItems, changedKeys, timestamps, currentDeValues = {}) {
+function buildOverlayEl(translations, allItems, changedKeys, timestamps, currentDeValues = {}, emptyDeKeys = new Set()) {
     const overlay = document.createElement('div');
     overlay.style.cssText = [
         'position:fixed;inset:0;z-index:10050;',
@@ -350,8 +361,10 @@ function buildOverlayEl(translations, allItems, changedKeys, timestamps, current
         const hasFormatDiff = isChanged && rawOldTxt && !hasTextDiff && rawOldTxt !== sourceText;
 
         // Badges
+        const isEmptyDe = emptyDeKeys.has(key);
         let badgeHtml = '';
-        if (hasTextDiff)        badgeHtml = '<span class="badge bg-warning text-dark ms-2">Text ge\u00E4ndert</span>';
+        if (isEmptyDe)          badgeHtml = '<span class="badge bg-danger text-white ms-2">DE leer</span>';
+        else if (hasTextDiff)   badgeHtml = '<span class="badge bg-warning text-dark ms-2">Text ge\u00E4ndert</span>';
         else if (hasFormatDiff) badgeHtml = '<span class="badge bg-info text-dark ms-2">Formatierung ge\u00E4ndert</span>';
         else if (isChanged)     badgeHtml = '<span class="badge bg-warning text-dark ms-2">Ge\u00E4ndert</span>';
 
