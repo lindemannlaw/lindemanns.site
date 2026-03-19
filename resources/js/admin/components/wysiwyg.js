@@ -148,64 +148,67 @@ function init(element) {
 		core.context.element.wysiwyg.dispatchEvent(new Event('input', { bubbles: true }));
 	};
 
+	// Debounced heavy processing (image/video container cleanup)
+	// Only runs 300ms after the user stops typing — not on every keystroke
+	let _onChangeTimer = null;
+
 	editor.onChange = function (contents, core) {
-		if (form) {
-			form.waitWysiwygEditotSaving = true;
-			form.classList.add('waiting');
-		}
+		// Lightweight: always sync the raw value immediately (no parsing)
+		element.value = contents;
 
-		const parser = new DOMParser();
-		const parseDocument = parser.parseFromString(contents, 'text/html');
-        const imageContainers = parseDocument.querySelectorAll('.se-image-container');
-        const videoContainers = parseDocument.querySelectorAll('.se-video-container');
+		// Debounce the expensive DOM parsing for image/video containers
+		clearTimeout(_onChangeTimer);
+		_onChangeTimer = setTimeout(() => {
+			// Only parse if there are SunEditor image/video containers to clean up
+			if (!contents.includes('se-image-container') && !contents.includes('se-video-container')) {
+				element.value = trimTrailingEmptyParagraphs(contents);
+				return;
+			}
 
-        imageContainers.forEach((container) => {
-            const image = container.querySelector('img');
-            const figure = container.querySelector('figure');
+			if (form) {
+				form.waitWysiwygEditotSaving = true;
+				form.classList.add('waiting');
+			}
 
-            if (!image || !figure) {
-                console.warn('Missing <img> or <figure> in a container. Skipping.');
-                return;
-            }
+			const parser = new DOMParser();
+			const parseDocument = parser.parseFromString(contents, 'text/html');
+			const imageContainers = parseDocument.querySelectorAll('.se-image-container');
+			const videoContainers = parseDocument.querySelectorAll('.se-video-container');
 
-            const picture = parseDocument.createElement('picture');
-            const float = container.classList.contains('__se__float-left') ? 'left' : (container.classList.contains('__se__float-right') ? 'right' : null);
+			imageContainers.forEach((container) => {
+				const image = container.querySelector('img');
+				const figure = container.querySelector('figure');
+				if (!image || !figure) return;
 
-            if (float) {
-                figure.classList.add(`float-${float}`);
-            }
+				const picture = parseDocument.createElement('picture');
+				const float = container.classList.contains('__se__float-left') ? 'left' : (container.classList.contains('__se__float-right') ? 'right' : null);
+				if (float) figure.classList.add(`float-${float}`);
 
-            figure.insertBefore(picture, image);
-            picture.appendChild(image);
-            parseDocument.body.insertBefore(figure, container);
-            container.remove();
-        });
+				figure.insertBefore(picture, image);
+				picture.appendChild(image);
+				parseDocument.body.insertBefore(figure, container);
+				container.remove();
+			});
 
-        videoContainers.forEach((container) => {
-            const iframe = container.querySelector('iframe');
-            const figure = container.querySelector('figure');
+			videoContainers.forEach((container) => {
+				const iframe = container.querySelector('iframe');
+				const figure = container.querySelector('figure');
+				if (!iframe || !figure) return;
 
-            if (!iframe || !figure) {
-                console.warn('Missing <iframe> or <figure> in a container. Skipping.');
-                return;
-            }
+				const float = container.classList.contains('__se__float-left') ? 'left' : (container.classList.contains('__se__float-right') ? 'right' : null);
+				if (float) figure.classList.add(`float-${float}`);
 
-            const float = container.classList.contains('__se__float-left') ? 'left' : (container.classList.contains('__se__float-right') ? 'right' : null);
+				parseDocument.body.insertBefore(figure, container);
+				container.remove();
+			});
 
-            if (float) {
-                figure.classList.add(`float-${float}`);
-            }
+			element.value = trimTrailingEmptyParagraphs(parseDocument.getElementsByTagName('body')[0].innerHTML);
 
-            parseDocument.body.insertBefore(figure, container);
-            container.remove();
-        });
-
-		element.value = trimTrailingEmptyParagraphs(parseDocument.getElementsByTagName('body')[0].innerHTML);
-
-		if (form) {
-			form.waitWysiwygEditotSaving = false;
-			form.classList.remove('waiting');
-		}
+			if (form) {
+				form.waitWysiwygEditotSaving = false;
+				form.classList.remove('waiting');
+			}
+		}, 300);
 	};
 
 	if (scrollWrapper) {
