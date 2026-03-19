@@ -391,21 +391,21 @@ function buildOverlayEl(translations, allItems, changedKeys, timestamps, current
             : '';
 
         return `
-            <div class="border rounded p-3 d-flex flex-column gap-2 ${isChanged ? 'border-warning' : ''}" data-tro-item>
+            <div class="border rounded p-2 d-flex flex-column gap-1 ${isChanged ? 'border-warning' : ''}" data-tro-item>
                 <div class="d-flex align-items-center gap-2">
                     <input class="form-check-input flex-shrink-0 mt-0" type="checkbox" ${isChanged ? 'checked' : ''} data-tro-checkbox>
                     <span class="fw-semibold small text-uppercase">${escHtml(label)}</span>
                     ${badgeHtml}
                 </div>
-                <div class="d-flex align-items-start gap-2">
-                    <span class="flex-shrink-0" style="font-size:1rem;line-height:1.4;" title="English">\u{1F1EC}\u{1F1E7}</span>
+                <div class="d-flex align-items-start gap-1">
+                    <span class="flex-shrink-0" style="font-size:0.85rem;" title="English">\u{1F1EC}\u{1F1E7}</span>
                     <div class="border-start border-2 border-secondary-subtle ps-2 flex-grow-1"
                          style="white-space:pre-wrap;">
                         ${enContentHtml}
                     </div>
                 </div>
-                <div class="d-flex align-items-start gap-2">
-                    <span class="flex-shrink-0" style="font-size:1rem;line-height:1.8;" title="Deutsch">\u{1F1E9}\u{1F1EA}</span>
+                <div class="d-flex align-items-start gap-1">
+                    <span class="flex-shrink-0" style="font-size:0.85rem;" title="Deutsch">\u{1F1E9}\u{1F1EA}</span>
                     <div class="flex-grow-1">
                         ${deDiffHtml}
                         ${editorHtml}

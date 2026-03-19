@@ -25,21 +25,21 @@ body{height: min-content; overflow: hidden;}
                     <span class="text-muted" style="font-size:0.7rem;">Änderungen DE (alt → neu):</span><br>
                     ${So(N,M)}
                </div>`:"";return`
-            <div class="border rounded p-3 d-flex flex-column gap-2 ${h?"border-warning":""}" data-tro-item>
+            <div class="border rounded p-2 d-flex flex-column gap-1 ${h?"border-warning":""}" data-tro-item>
                 <div class="d-flex align-items-center gap-2">
                     <input class="form-check-input flex-shrink-0 mt-0" type="checkbox" ${h?"checked":""} data-tro-checkbox>
                     <span class="fw-semibold small text-uppercase">${Ie(c)}</span>
                     ${_}
                 </div>
-                <div class="d-flex align-items-start gap-2">
-                    <span class="flex-shrink-0" style="font-size:1rem;line-height:1.4;" title="English">🇬🇧</span>
+                <div class="d-flex align-items-start gap-1">
+                    <span class="flex-shrink-0" style="font-size:0.85rem;" title="English">🇬🇧</span>
                     <div class="border-start border-2 border-secondary-subtle ps-2 flex-grow-1"
                          style="white-space:pre-wrap;">
                         ${k}
                     </div>
                 </div>
-                <div class="d-flex align-items-start gap-2">
-                    <span class="flex-shrink-0" style="font-size:1rem;line-height:1.8;" title="Deutsch">🇩🇪</span>
+                <div class="d-flex align-items-start gap-1">
+                    <span class="flex-shrink-0" style="font-size:0.85rem;" title="Deutsch">🇩🇪</span>
                     <div class="flex-grow-1">
                         ${V}
                         ${A}
