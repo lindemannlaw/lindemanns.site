@@ -255,18 +255,13 @@ function initBuilder(builder) {
         }
     });
 
-    // Real-time sync for number inputs + label update on headline change
+    // Real-time sync for number inputs (layout fields EN↔DE)
+    // Block labels update only on save/reload, not live (avoids input latency)
     builder.addEventListener('input', (event) => {
         const field = event.target.closest('[name]');
         if (!field) return;
         if (field.type === 'number') {
             syncLayoutFieldToSibling(field, builder);
-        }
-        // Update block label when headline changes
-        const name = field.getAttribute('name') || '';
-        if (name.includes('[headline]')) {
-            const block = field.closest('[data-block]');
-            if (block) updateBlockLabel(block, getBlockIndex(block));
         }
     });
 
