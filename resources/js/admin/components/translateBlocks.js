@@ -209,7 +209,17 @@ async function handleTranslate(button) {
             button.dataset.textTimestamps = JSON.stringify(timestamps);
         }
 
-        flashButton(button, `✓ ${count} Feld${count !== 1 ? 'er' : ''} übernommen`, 2500, titleSpan, originalTitle);
+        // Auto-save: trigger form submit so translations persist immediately
+        if (count > 0) {
+            const submitBtn = form.querySelector('[type="submit"]')
+                           ?? form.closest('.modal-content')?.querySelector('[type="submit"]');
+            if (submitBtn) {
+                flashButton(button, `✓ ${count} Feld${count !== 1 ? 'er' : ''} – speichert…`, 3000, titleSpan, originalTitle);
+                submitBtn.click();
+            } else {
+                flashButton(button, `✓ ${count} Feld${count !== 1 ? 'er' : ''} übernommen`, 2500, titleSpan, originalTitle);
+            }
+        }
 
     } catch (error) {
         console.error('[translateBlocks] Translation failed:', error);
