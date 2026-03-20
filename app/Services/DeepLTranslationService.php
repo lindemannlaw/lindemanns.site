@@ -90,8 +90,8 @@ class DeepLTranslationService
         try {
             $payload = [
                 'text'        => $values,
-                'source_lang' => strtoupper($sourceLang),
                 'target_lang' => strtoupper($targetLang),
+                // Omit source_lang to let DeepL auto-detect (better for short terms)
             ];
 
             if ($isHtml) {
