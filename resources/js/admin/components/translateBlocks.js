@@ -171,6 +171,8 @@ async function handleTranslate(button) {
     button.disabled = false;
     if (approved === null) return; // cancelled
 
+    console.log('[translateBlocks] approved items:', Object.keys(approved).length, Object.keys(approved));
+
     // Apply approved values to DE form fields (for live preview)
     let count = 0;
     const appliedTsKeys = [];
@@ -179,6 +181,7 @@ async function handleTranslate(button) {
         const targetKey   = sourceKey.replace(`[${sourceLocale}]`, `[${targetLocale}]`);
         const targetField = form.querySelector(`[name="${CSS.escape(targetKey)}"]:not([disabled])`)
                          ?? form.querySelector(`[name="${CSS.escape(targetKey)}"]`);
+        console.log('[translateBlocks] apply:', sourceKey, '→', targetKey, 'found:', !!targetField, 'text:', translatedText?.substring(0, 50));
         if (targetField) {
             targetField.value = translatedText;
             if (targetField._sunEditor) targetField._sunEditor.setContents(translatedText);
@@ -191,6 +194,8 @@ async function handleTranslate(button) {
 
     // Save directly to DB via API
     const applyUrl = button.dataset.applyTranslationsUrl;
+    console.log('[translateBlocks] applyUrl:', applyUrl, 'payload count:', translationsPayload.length);
+    console.log('[translateBlocks] payload:', JSON.stringify(translationsPayload, null, 2));
     if (applyUrl && translationsPayload.length > 0) {
         try {
             const saveResp = await fetch(applyUrl, {
@@ -206,9 +211,10 @@ async function handleTranslate(button) {
                 }),
             });
 
+            const saveRespData = await saveResp.json().catch(() => ({}));
+            console.log('[translateBlocks] save response:', saveResp.status, saveRespData);
             if (!saveResp.ok) {
-                const errData = await saveResp.json().catch(() => ({}));
-                throw new Error(errData.error || `HTTP ${saveResp.status}`);
+                throw new Error(saveRespData.error || `HTTP ${saveResp.status}`);
             }
 
             // Update local timestamps
