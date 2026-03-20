@@ -337,8 +337,11 @@ function showReviewOverlay(translations, allItems, changedKeys, timestamps, curr
                 if (!editor) return;
                 const key    = editor.dataset.key;
                 const isHtml = editor.dataset.isHtml === 'true';
-                result[key]  = { text: isHtml ? editor.innerHTML : editor.value, isHtml };
+                const val    = isHtml ? editor.innerHTML : editor.value;
+                console.log('[translateBlocks] COLLECT editor:', key, 'tagName:', editor.tagName, 'isHtml:', isHtml, 'value:', val?.substring(0, 80));
+                result[key]  = { text: val, isHtml };
             });
+            console.log('[translateBlocks] COLLECT result keys:', Object.keys(result));
             finish(result);
         });
     });
