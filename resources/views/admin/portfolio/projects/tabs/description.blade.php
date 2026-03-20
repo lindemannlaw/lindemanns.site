@@ -644,6 +644,14 @@
                                                                 :placeholder="'Subline (z.B. Beds, +/- Acres)'"
                                                             />
                                                         </div>
+                                                        <div class="col-12 d-flex align-items-center">
+                                                            <div class="form-check form-switch mb-0">
+                                                                <input class="form-check-input" type="checkbox" value="1"
+                                                                       name="description_blocks[{{ $lang }}][{{ $blockIndex }}][items][{{ $itemIndex }}][full_width_line]"
+                                                                       {{ data_get($item, 'full_width_line') ? 'checked' : '' }}>
+                                                                <label class="form-check-label small">Durchgezogene Linie (ignoriert Grid-Gutter)</label>
+                                                            </div>
+                                                        </div>
                                                     </div>
                                                 </div>
                                             @endforeach
@@ -1007,6 +1015,13 @@
                             </div>
                             <div class="col-12 col-lg-6">
                                 <x-admin.field.text :name="'description_blocks['. $lang .'][__block__][items][__item__][subline]'" :required="false" :placeholder="'Subline (z.B. Beds, +/- Acres)'" />
+                            </div>
+                            <div class="col-12 d-flex align-items-center">
+                                <div class="form-check form-switch mb-0">
+                                    <input class="form-check-input" type="checkbox" value="1"
+                                           name="description_blocks[{{ $lang }}][__block__][items][__item__][full_width_line]">
+                                    <label class="form-check-label small">Durchgezogene Linie (ignoriert Grid-Gutter)</label>
+                                </div>
                             </div>
                         </div>
                     </div>
