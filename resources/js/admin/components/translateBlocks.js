@@ -187,7 +187,7 @@ async function handleTranslate(button) {
 
         if (titleSpan) titleSpan.textContent = originalTitle;
 
-        const approved = await showReviewOverlay(translations, itemsWithContent, changedKeys, timestamps, currentDeValues, emptyDeKeys, deEqualsEnKeys);
+        const approved = await showReviewOverlay(translations, itemsWithContent, changedKeys, timestamps, currentDeValues, emptyDeKeys, deEqualsEnKeys, translateUrl);
 
         button.disabled = false;
         if (approved === null) return; // cancelled
@@ -323,7 +323,7 @@ function postTimestampUpdate(url, type, keys) {
 // Review overlay
 // ---------------------------------------------------------------------------
 
-function showReviewOverlay(translations, allItems, changedKeys, timestamps, currentDeValues = {}, emptyDeKeys = new Set(), deEqualsEnKeys = new Set()) {
+function showReviewOverlay(translations, allItems, changedKeys, timestamps, currentDeValues = {}, emptyDeKeys = new Set(), deEqualsEnKeys = new Set(), translateUrl = '') {
     return new Promise(resolve => {
         let settled = false;
 
@@ -342,6 +342,11 @@ function showReviewOverlay(translations, allItems, changedKeys, timestamps, curr
         // Append inside modal so Bootstrap's focus-trap allows typing
         const modal = document.querySelector('.modal.show') || document.body;
         modal.appendChild(overlay);
+
+        // Wire up per-field re-translate buttons
+        if (translateUrl) {
+            wireRetranslateButtons(overlay, allItems, translateUrl);
+        }
 
         overlay.addEventListener('click', e => { if (e.target === overlay) finish(null); });
         overlay.querySelector('#tro-cancel').addEventListener('click', () => finish(null));
@@ -462,7 +467,16 @@ function buildOverlayEl(translations, allItems, changedKeys, timestamps, current
                     <span class="flex-shrink-0" style="font-size:0.85rem;" title="Deutsch">\u{1F1E9}\u{1F1EA}</span>
                     <div class="flex-grow-1">
                         ${deDiffHtml}
-                        ${editorHtml}
+                        <div class="d-flex align-items-start gap-1">
+                            <div class="flex-grow-1">${editorHtml}</div>
+                            <button type="button"
+                                class="btn btn-sm btn-outline-secondary flex-shrink-0 tro-retranslate"
+                                data-retranslate-key="${escAttr(key)}"
+                                title="Einzeln neu \u00FCbersetzen"
+                                style="padding:2px 5px;line-height:1;font-size:0.75rem;margin-top:1px;">
+                                \u{1F504}
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>`;
@@ -518,6 +532,80 @@ function buildOverlayEl(translations, allItems, changedKeys, timestamps, current
 
     updateState();
     return overlay;
+}
+
+// ---------------------------------------------------------------------------
+// Per-field re-translate
+// ---------------------------------------------------------------------------
+
+function wireRetranslateButtons(overlay, allItems, translateUrl) {
+    const itemMap = Object.fromEntries(allItems.map(i => [i.key, i]));
+
+    overlay.querySelectorAll('.tro-retranslate').forEach(btn => {
+        btn.addEventListener('click', async () => {
+            const key  = btn.dataset.retranslateKey;
+            const item = itemMap[key];
+            if (!item) return;
+
+            const editor = overlay.querySelector(`.tro-editor[data-key="${CSS.escape(key)}"]`);
+            if (!editor) return;
+
+            // Visual feedback
+            const origLabel = btn.textContent;
+            btn.disabled    = true;
+            btn.textContent = '\u231B';
+
+            try {
+                const response = await fetch(translateUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': csrfToken(),
+                        'X-Requested-With': 'XMLHttpRequest',
+                    },
+                    body: JSON.stringify({
+                        source_lang: 'en',
+                        target_lang: 'de',
+                        items: [{ key: item.key, text: item.text, isHtml: item.isHtml }],
+                    }),
+                });
+
+                if (!response.ok) {
+                    const err = await response.json().catch(() => ({}));
+                    throw new Error(err.error || `HTTP ${response.status}`);
+                }
+
+                const { translations = {} } = await response.json();
+                const translated = translations[key] ?? '';
+
+                if (translated) {
+                    if (editor.dataset.isHtml === 'true') {
+                        editor.innerHTML = translated;
+                    } else {
+                        editor.value = translated;
+                    }
+                    // Auto-check the checkbox
+                    const troItem = btn.closest('[data-tro-item]');
+                    const cb = troItem?.querySelector('[data-tro-checkbox]');
+                    if (cb && !cb.checked) {
+                        cb.checked = true;
+                        cb.dispatchEvent(new Event('change', { bubbles: true }));
+                    }
+                    btn.textContent = '\u2705';
+                } else {
+                    btn.textContent = '\u274C';
+                }
+            } catch (err) {
+                console.error('[translateBlocks] Re-translate failed:', err);
+                btn.textContent = '\u274C';
+            }
+
+            setTimeout(() => {
+                btn.textContent = origLabel;
+                btn.disabled    = false;
+            }, 1500);
+        });
+    });
 }
 
 // ---------------------------------------------------------------------------
