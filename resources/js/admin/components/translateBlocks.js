@@ -406,11 +406,12 @@ function buildOverlayEl(translations, allItems, changedKeys, timestamps, current
         const editorHtml = isHtml
             ? `<div contenteditable="true"
                     class="form-control form-control-sm tro-editor"
-                    style="min-height:64px;max-height:200px;overflow-y:auto;white-space:pre-wrap;"
+                    style="min-height:32px;max-height:200px;overflow-y:auto;white-space:pre-wrap;padding:.25rem .5rem;"
                     data-key="${escAttr(key)}" data-is-html="true"
                 >${translated}</div>`
             : `<textarea class="form-control form-control-sm tro-editor"
-                    rows="${translated.length > 140 ? 4 : 2}"
+                    rows="${translated.length > 140 ? 3 : 1}"
+                    style="padding:.25rem .5rem;"
                     data-key="${escAttr(key)}" data-is-html="false"
                 >${escHtml(translated)}</textarea>`;
 
@@ -420,14 +421,14 @@ function buildOverlayEl(translations, allItems, changedKeys, timestamps, current
         const newDeClean     = (translated || '').replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
         const hasDeDiff      = currentDeClean && newDeClean && currentDeClean !== newDeClean;
         const deDiffHtml     = hasDeDiff
-            ? `<div class="small mb-1 p-2 rounded" style="background:#f0fdf4;border:1px dashed #22c55e;">
+            ? `<div class="small mb-0 p-1 rounded" style="background:#f0fdf4;border:1px dashed #22c55e;">
                     <span class="text-muted" style="font-size:0.7rem;">\u00C4nderungen DE (alt \u2192 neu):</span><br>
                     ${highlightDiff(currentDeClean, newDeClean)}
                </div>`
             : '';
 
         return `
-            <div class="border rounded p-2 d-flex flex-column gap-1 ${isChanged ? 'border-warning' : ''}" data-tro-item>
+            <div class="border rounded py-1 px-2 d-flex flex-column ${isChanged ? 'border-warning' : ''}" style="gap:2px;" data-tro-item>
                 <div class="d-flex align-items-center gap-2">
                     <input class="form-check-input flex-shrink-0 mt-0" type="checkbox" ${isChanged ? 'checked' : ''} data-tro-checkbox>
                     <span class="fw-semibold small text-uppercase">${escHtml(label)}</span>
@@ -474,7 +475,7 @@ function buildOverlayEl(translations, allItems, changedKeys, timestamps, current
                     Alle ausw\u00E4hlen
                 </label>
             </div>
-            <div class="overflow-y-auto flex-grow-1 px-4 py-3 d-flex flex-column gap-3">
+            <div class="overflow-y-auto flex-grow-1 px-4 py-2 d-flex flex-column gap-2">
                 ${changedCount > 0
                     ? `<div class="small fw-semibold text-warning-emphasis">${changedCount} Feld${changedCount !== 1 ? 'er' : ''} ben\u00F6tigen \u00DCbersetzung</div>`
                     : `<div class="small text-muted">Keine \u00C4nderungen seit letzter \u00DCbersetzung erkannt</div>`}
