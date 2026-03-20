@@ -324,6 +324,8 @@ $galleryImageSizes = [
                             $nPbottom = max(0, min(300, (int)data_get($blockOrRow, 'padding_bottom', 0)));
                             $nHeadlineColSpan = max(1, min(12, (int)data_get($blockOrRow, 'headline_col_span', 12)));
                             $nHeadlineLine = (bool)data_get($blockOrRow, 'headline_line', false);
+                            $nGridColSpan = max(1, min(12, (int)data_get($blockOrRow, 'grid_col_span', 12)));
+                            $nGridColStart = max(1, min(12, (int)data_get($blockOrRow, 'grid_col_start', 1)));
                             $nItems = data_get($blockOrRow, 'items', []);
                             $lineColors = [
                                 'emerald-950' => 'var(--color-primary-brand-950-darkest)',
@@ -341,7 +343,8 @@ $galleryImageSizes = [
                                     {{ data_get($blockOrRow, 'headline') }}
                                 </h2>
                             @endif
-                            <div class="project-numbers-grid">
+                            <div class="project-numbers-grid"
+                                 style="--grid-col-span: {{ $nGridColSpan }}; --grid-col-start: {{ $nGridColStart }};">
                                 @foreach($nItems as $item)
                                     @php
                                         $itemLineColor = $lineColors[data_get($item, 'line_color', 'emerald-900')] ?? 'var(--color-primary-brand-900-darker-silent)';

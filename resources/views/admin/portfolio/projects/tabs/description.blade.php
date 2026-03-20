@@ -557,20 +557,36 @@
 
                                     {{-- NUMBERS / KPIs --}}
                                     <div data-block-type-panel="numbers" class="d-flex flex-column gap-3 {{ data_get($block, 'type') === 'numbers' ? null : 'd-none' }}">
-                                        {{-- Padding --}}
+                                        {{-- Padding + Grid --}}
                                         <div class="row g-2">
-                                            <div class="col-6">
+                                            <div class="col-6 col-lg-3">
                                                 <x-admin.field.padding-select
                                                     :name="'description_blocks['. $lang .'][' . $blockIndex . '][padding_top]'"
                                                     :value="data_get($block, 'padding_top', 0)"
                                                     :placeholder="'Padding oben'"
                                                 />
                                             </div>
-                                            <div class="col-6">
+                                            <div class="col-6 col-lg-3">
                                                 <x-admin.field.padding-select
                                                     :name="'description_blocks['. $lang .'][' . $blockIndex . '][padding_bottom]'"
                                                     :value="data_get($block, 'padding_bottom', 0)"
                                                     :placeholder="'Padding unten'"
+                                                />
+                                            </div>
+                                            <div class="col-6 col-lg-3">
+                                                <x-admin.field.number
+                                                    :name="'description_blocks['. $lang .'][' . $blockIndex . '][grid_col_span]'"
+                                                    :value="data_get($block, 'grid_col_span', 12)"
+                                                    :placeholder="'Block Spalten (1-12)'"
+                                                    :fieldAttrs="'min=1 max=12'"
+                                                />
+                                            </div>
+                                            <div class="col-6 col-lg-3">
+                                                <x-admin.field.number
+                                                    :name="'description_blocks['. $lang .'][' . $blockIndex . '][grid_col_start]'"
+                                                    :value="data_get($block, 'grid_col_start', 1)"
+                                                    :placeholder="'Start Spalte (1-12)'"
+                                                    :fieldAttrs="'min=1 max=12'"
                                                 />
                                             </div>
                                         </div>
@@ -836,11 +852,17 @@
                             </div>
                             <div data-block-type-panel="numbers" class="d-flex flex-column gap-3 d-none">
                                 <div class="row g-2">
-                                    <div class="col-6">
+                                    <div class="col-6 col-lg-3">
                                         <x-admin.field.padding-select :name="'description_blocks['. $lang .'][__block__][padding_top]'" :value="0" :placeholder="'Padding oben'" />
                                     </div>
-                                    <div class="col-6">
+                                    <div class="col-6 col-lg-3">
                                         <x-admin.field.padding-select :name="'description_blocks['. $lang .'][__block__][padding_bottom]'" :value="0" :placeholder="'Padding unten'" />
+                                    </div>
+                                    <div class="col-6 col-lg-3">
+                                        <x-admin.field.number :name="'description_blocks['. $lang .'][__block__][grid_col_span]'" :value="12" :placeholder="'Block Spalten (1-12)'" :fieldAttrs="'min=1 max=12'" />
+                                    </div>
+                                    <div class="col-6 col-lg-3">
+                                        <x-admin.field.number :name="'description_blocks['. $lang .'][__block__][grid_col_start]'" :value="1" :placeholder="'Start Spalte (1-12)'" :fieldAttrs="'min=1 max=12'" />
                                     </div>
                                 </div>
                                 <div class="row g-2">
