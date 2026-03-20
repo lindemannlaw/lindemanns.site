@@ -704,13 +704,12 @@
         margin: 0 0 range.build(12, 20, px, 375, 1240);
     }
 
-    // Full-width line: extend into grid gutters so adjacent items form a continuous line
+    // Full-width line: extend one full gutter to the right so adjacent items connect
     .project-numbers-item.has-full-line {
         overflow: visible;
 
         .project-numbers-item-line {
             width: calc(100% + var(--numbers-col-gap));
-            margin-left: calc(-0.5 * var(--numbers-col-gap));
         }
     }
 
