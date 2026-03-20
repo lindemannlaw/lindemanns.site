@@ -60,6 +60,8 @@ class UpdateRequest extends FormRequest
             $rules['description_blocks.' . $locale . '.*.headline'] = ['nullable', 'string', 'max:255'];
             $rules['description_blocks.' . $locale . '.*.headline_col_span'] = ['nullable', 'integer', 'min:1', 'max:12'];
             $rules['description_blocks.' . $locale . '.*.headline_line'] = ['nullable'];
+            $rules['description_blocks.' . $locale . '.*.grid_col_span'] = ['nullable', 'integer', 'min:1', 'max:12'];
+            $rules['description_blocks.' . $locale . '.*.grid_col_start'] = ['nullable', 'integer', 'min:1', 'max:12'];
             $rules['description_blocks.' . $locale . '.*.padding_top'] = ['nullable', 'integer', 'min:0', 'max:300'];
             $rules['description_blocks.' . $locale . '.*.padding_bottom'] = ['nullable', 'integer', 'min:0', 'max:300'];
             // floating_gallery items
