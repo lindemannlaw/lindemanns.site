@@ -846,10 +846,17 @@ class ProjectController extends Controller
                 // Convert EN form key to DE
                 $deKey = str_replace('[en]', "[$targetLocale]", $formKey);
 
+                Log::info('[applyTranslations] applying', [
+                    'en_key' => $formKey,
+                    'de_key' => $deKey,
+                    'text_preview' => mb_substr($text, 0, 80),
+                ]);
+
                 // Parse the key to determine which field/attribute to update
                 $this->applyTranslationToProject($project, $deKey, $text, $targetLocale);
             }
 
+            Log::info('[applyTranslations] saving project', ['id' => $project->id, 'dirty' => $project->getDirty()]);
             $project->saveOrFail();
 
             // Update timestamps: mark these fields as translated
@@ -920,6 +927,8 @@ class ProjectController extends Controller
             $project->setTranslation('description_blocks', $locale, $blocks);
             return;
         }
+
+        Log::warning('[applyTranslations] unmatched key', ['de_key' => $deFormKey]);
     }
 
     /**
