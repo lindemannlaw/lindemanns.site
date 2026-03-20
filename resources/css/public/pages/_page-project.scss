@@ -696,9 +696,11 @@
 
     // Full-width line: extend into grid gutters so adjacent items form a continuous line
     .project-numbers-item.has-full-line {
+        overflow: visible;
+
         .project-numbers-item-line {
+            width: calc(100% + var(--numbers-col-gap));
             margin-left: calc(-0.5 * var(--numbers-col-gap));
-            margin-right: calc(-0.5 * var(--numbers-col-gap));
         }
     }
 
