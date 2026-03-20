@@ -615,10 +615,11 @@ class ProjectController extends Controller
                         $lineColor = data_get($item, 'line_color', 'emerald-900');
 
                         $preparedItems[] = [
-                            'title'      => data_get($item, 'title') ?: null,
-                            'line_color' => in_array($lineColor, $allowedColors) ? $lineColor : 'emerald-900',
-                            'number'     => data_get($item, 'number') ?: null,
-                            'subline'    => data_get($item, 'subline') ?: null,
+                            'title'           => data_get($item, 'title') ?: null,
+                            'line_color'      => in_array($lineColor, $allowedColors) ? $lineColor : 'emerald-900',
+                            'number'          => data_get($item, 'number') ?: null,
+                            'subline'         => data_get($item, 'subline') ?: null,
+                            'full_width_line' => (bool)data_get($item, 'full_width_line', false),
                         ];
                     }
 
