@@ -37,6 +37,7 @@ class StoreRequest extends FormRequest
         $rules['seo_title'] = ['nullable', 'array'];
         $rules['seo_description'] = ['nullable', 'array'];
         $rules['seo_keywords'] = ['nullable', 'array'];
+        $rules['geo_text'] = ['nullable', 'array'];
 
         foreach (supported_languages_keys() as $locale) {
             $rules['title.' . $locale] = ['required', 'string', 'max:255'];
@@ -58,6 +59,7 @@ class StoreRequest extends FormRequest
             $rules['seo_title.' . $locale] = ['nullable', 'string', 'max:255'];
             $rules['seo_description.' . $locale] = ['nullable', 'string', 'max:255'];
             $rules['seo_keywords.' . $locale] = ['nullable', 'string', 'max:255'];
+            $rules['geo_text.' . $locale] = ['nullable', 'string', 'max:5000'];
         }
 
         return $rules;

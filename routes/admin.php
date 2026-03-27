@@ -222,4 +222,19 @@ Route::group([
     /* SEO GENERATION */
     Route::post('/generate-seo', [\App\Http\Controllers\Admin\SeoController::class, 'generate'])->name('admin.generate-seo');
 
+    /* SEO/GEO OVERVIEW */
+    Route::group(['prefix' => 'seo-geo'], function () {
+        Route::get('/', [\App\Http\Controllers\Admin\SeoGeoController::class, 'index'])->name('admin.seo-geo.index');
+        Route::get('/{type}/{id}', [\App\Http\Controllers\Admin\SeoGeoController::class, 'show'])->name('admin.seo-geo.show');
+        Route::post('/generate', [\App\Http\Controllers\Admin\SeoGeoController::class, 'generate'])->name('admin.seo-geo.generate');
+        Route::post('/apply', [\App\Http\Controllers\Admin\SeoGeoController::class, 'apply'])->name('admin.seo-geo.apply');
+    });
+
+    /* TRANSLATION CHECK */
+    Route::group(['prefix' => 'translations'], function () {
+        Route::get('/', [\App\Http\Controllers\Admin\TranslationCheckController::class, 'index'])->name('admin.translations.index');
+        Route::post('/translate', [\App\Http\Controllers\Admin\TranslationCheckController::class, 'translate'])->name('admin.translations.translate');
+        Route::post('/apply', [\App\Http\Controllers\Admin\TranslationCheckController::class, 'apply'])->name('admin.translations.apply');
+    });
+
 });

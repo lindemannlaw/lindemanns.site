@@ -160,6 +160,20 @@
                 'isCan' => $user->can('all'),
             ],
             [
+                'title' => __('admin.seo_geo_overview'),
+                'url' => 'admin.seo-geo.index',
+                'icon' => 'search',
+                'submenu' => [],
+                'isCan' => $user->can('all'),
+            ],
+            [
+                'title' => __('admin.translation_check'),
+                'url' => 'admin.translations.index',
+                'icon' => 'translate',
+                'submenu' => [],
+                'isCan' => $user->can('all'),
+            ],
+            [
                 'title' => __('admin.imprint'),
                 'url' => 'admin.imprint.page',
                 'icon' => 'card-text',

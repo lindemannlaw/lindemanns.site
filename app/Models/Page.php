@@ -31,6 +31,7 @@ class Page extends Model implements HasMedia
         'seo_title',
         'seo_description',
         'seo_keywords',
+        'geo_text',
 
         'content_data',
     ];
@@ -42,6 +43,7 @@ class Page extends Model implements HasMedia
         'seo_title',
         'seo_description',
         'seo_keywords',
+        'geo_text',
 
         'content_data',
     ];
@@ -54,6 +56,7 @@ class Page extends Model implements HasMedia
             'seo_title' => 'json',
             'seo_description' => 'json',
             'seo_keywords' => 'json',
+            'geo_text' => 'json',
             'content_data' => 'json',
         ];
     }

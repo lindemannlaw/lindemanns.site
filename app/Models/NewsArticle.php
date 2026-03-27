@@ -28,6 +28,7 @@ class NewsArticle extends Model implements HasMedia
         'seo_title',
         'seo_description',
         'seo_keywords',
+        'geo_text',
 
         'active',
         'sort',
@@ -41,6 +42,7 @@ class NewsArticle extends Model implements HasMedia
         'seo_title',
         'seo_description',
         'seo_keywords',
+        'geo_text',
     ];
 
     protected function casts(): array
@@ -52,6 +54,7 @@ class NewsArticle extends Model implements HasMedia
             'seo_title' => 'json',
             'seo_description' => 'json',
             'seo_keywords' => 'json',
+            'geo_text' => 'json',
             'active' => 'boolean',
         ];
     }

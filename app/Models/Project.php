@@ -26,6 +26,7 @@ class Project extends Model implements HasMedia
         'seo_title',
         'seo_description',
         'seo_keywords',
+        'geo_text',
 
         'property_details',
         'location',
@@ -49,6 +50,7 @@ class Project extends Model implements HasMedia
         'seo_title',
         'seo_description',
         'seo_keywords',
+        'geo_text',
 
         'property_details',
         'location',

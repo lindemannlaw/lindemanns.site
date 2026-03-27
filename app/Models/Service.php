@@ -26,6 +26,7 @@ class Service extends Model implements HasMedia
         'seo_title',
         'seo_description',
         'seo_keywords',
+        'geo_text',
 
         'details',
         'service_category_id',
@@ -43,6 +44,7 @@ class Service extends Model implements HasMedia
         'seo_title',
         'seo_description',
         'seo_keywords',
+        'geo_text',
 
         'details',
     ];
@@ -57,6 +59,7 @@ class Service extends Model implements HasMedia
             'seo_title' => 'json',
             'seo_description' => 'json',
             'seo_keywords' => 'json',
+            'geo_text' => 'json',
             'details' => 'json',
             'service_category_id' => 'integer',
             'active' => 'boolean',

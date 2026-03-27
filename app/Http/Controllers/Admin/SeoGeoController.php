@@ -1,0 +1,229 @@
+<?php
+
+namespace App\Http\Controllers\Admin;
+
+use App\Http\Controllers\Controller;
+use App\Services\DeepLTranslationService;
+use App\Services\SeoGenerationService;
+use App\Services\TranslatableModelRegistry;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use Illuminate\View\View;
+
+class SeoGeoController extends Controller
+{
+    public function __construct(
+        private TranslatableModelRegistry $registry,
+        private SeoGenerationService $seo,
+        private DeepLTranslationService $deepl,
+    ) {}
+
+    public function index(Request $request): View
+    {
+        $locales = supported_languages_keys();
+        $seoFields = TranslatableModelRegistry::SEO_FIELDS;
+        $totalSlots = count($seoFields) * count($locales);
+
+        $typeFilter = $request->get('type', 'all');
+        $statusFilter = $request->get('status', 'all');
+
+        $allItems = $this->registry->allSeoItems();
+
+        // Compute completeness for each item
+        $items = array_map(function ($item) use ($locales, $seoFields, $totalSlots) {
+            $filled = 0;
+            $seoPreview = [];
+
+            foreach ($seoFields as $field) {
+                foreach ($locales as $locale) {
+                    $val = $item['model']->getTranslation($field, $locale, false);
+                    if (filled($val)) $filled++;
+                }
+                // Preview the default locale value
+                $seoPreview[$field] = $item['model']->getTranslation($field, config('app.fallback_locale'), false) ?: '';
+            }
+
+            $item['filled'] = $filled;
+            $item['total'] = $totalSlots;
+            $item['percent'] = $totalSlots > 0 ? round($filled / $totalSlots * 100) : 0;
+            $item['seo'] = $seoPreview;
+
+            if ($item['percent'] === 100) $item['status'] = 'complete';
+            elseif ($item['percent'] === 0) $item['status'] = 'empty';
+            else $item['status'] = 'partial';
+
+            return $item;
+        }, $allItems);
+
+        // Apply filters
+        if ($typeFilter !== 'all') {
+            $items = array_filter($items, fn ($i) => $i['type'] === $typeFilter);
+        }
+        if ($statusFilter !== 'all') {
+            $items = array_filter($items, fn ($i) => $i['status'] === $statusFilter);
+        }
+
+        // Summary counts (before type/status filter for global overview)
+        $complete = count(array_filter($allItems, fn ($i) => $this->quickStatus($i, $locales, $seoFields, $totalSlots) === 'complete'));
+        $partial = count(array_filter($allItems, fn ($i) => $this->quickStatus($i, $locales, $seoFields, $totalSlots) === 'partial'));
+        $empty = count(array_filter($allItems, fn ($i) => $this->quickStatus($i, $locales, $seoFields, $totalSlots) === 'empty'));
+
+        // Available types for filter dropdown
+        $types = collect($allItems)->pluck('type')->unique()->values()->all();
+
+        return view('admin.seo-geo.index', [
+            'items'        => array_values($items),
+            'types'        => $types,
+            'typeFilter'   => $typeFilter,
+            'statusFilter' => $statusFilter,
+            'complete'     => $complete,
+            'partial'      => $partial,
+            'empty'        => $empty,
+            'total'        => count($allItems),
+        ]);
+    }
+
+    public function show(Request $request, string $type, int $id): View|JsonResponse
+    {
+        $model = $this->registry->resolveModel($type, $id);
+        if (!$model) abort(404);
+
+        $meta = $this->registry->resolve($type);
+        $locales = supported_languages_keys();
+        $seoFields = TranslatableModelRegistry::SEO_FIELDS;
+
+        $fields = [];
+        foreach ($seoFields as $field) {
+            $values = [];
+            foreach ($locales as $locale) {
+                $values[$locale] = $model->getTranslation($field, $locale, false) ?: '';
+            }
+            $fields[$field] = $values;
+        }
+
+        $title = $model->getTranslation($meta['titleField'], config('app.fallback_locale'), false) ?: '(ohne Titel)';
+
+        if ($request->ajax()) {
+            return response()->json(['fields' => $fields, 'title' => $title]);
+        }
+
+        return view('admin.seo-geo.show', [
+            'model'    => $model,
+            'type'     => $type,
+            'typeLabel' => $this->registry->label($type),
+            'modelId'  => $id,
+            'title'    => $title,
+            'fields'   => $fields,
+            'locales'  => $locales,
+            'seoFields' => $seoFields,
+        ]);
+    }
+
+    public function generate(Request $request): JsonResponse
+    {
+        $request->validate([
+            'type'   => 'required|string',
+            'id'     => 'required|integer',
+            'locale' => 'required|string|max:5',
+        ]);
+
+        $model = $this->registry->resolveModel($request->type, $request->id);
+        if (!$model) return response()->json(['error' => 'Not found'], 404);
+
+        $meta = $this->registry->resolve($request->type);
+        $locale = $request->locale;
+
+        $context = [
+            'title'             => $model->getTranslation($meta['titleField'], $locale, false) ?: $model->getTranslation($meta['titleField'], 'en', false),
+            'short_description' => method_exists($model, 'getTranslation') ? ($model->getTranslation('short_description', $locale, false) ?: '') : '',
+            'location'          => method_exists($model, 'getTranslation') ? ($model->getTranslation('location', $locale, false) ?: '') : '',
+        ];
+
+        // Add property details for projects
+        if ($request->type === 'project') {
+            $details = $model->getTranslation('property_details', $locale, false);
+            if (is_array($details)) {
+                $context['property_type'] = $details['property_type'] ?? '';
+            }
+            $context['area'] = $model->area ?? '';
+        }
+
+        $result = $this->seo->generate($context, $locale);
+
+        return response()->json($result);
+    }
+
+    public function apply(Request $request): JsonResponse
+    {
+        $request->validate([
+            'type'    => 'required|string',
+            'id'      => 'required|integer',
+            'locale'  => 'required|string|max:5',
+            'fields'  => 'required|array',
+        ]);
+
+        $model = $this->registry->resolveModel($request->type, $request->id);
+        if (!$model) return response()->json(['error' => 'Not found'], 404);
+
+        $sourceLang = $request->locale;
+        $allLocales = supported_languages_keys();
+        $otherLocales = array_filter($allLocales, fn ($l) => $l !== $sourceLang);
+
+        try {
+            DB::beginTransaction();
+
+            // Save source locale values
+            foreach ($request->fields as $field => $value) {
+                if (in_array($field, TranslatableModelRegistry::SEO_FIELDS)) {
+                    $model->setTranslation($field, $sourceLang, $value);
+                }
+            }
+
+            // Translate to all other languages via DeepL
+            if ($this->deepl->isConfigured() && !empty($otherLocales)) {
+                $sourceTexts = [];
+                $fieldOrder = [];
+                foreach ($request->fields as $field => $value) {
+                    if (in_array($field, TranslatableModelRegistry::SEO_FIELDS) && filled($value)) {
+                        $sourceTexts[] = ['text' => $value, 'isHtml' => false];
+                        $fieldOrder[] = $field;
+                    }
+                }
+
+                foreach ($otherLocales as $targetLang) {
+                    $deeplTarget = strtoupper($targetLang);
+                    $translated = $this->deepl->translate($sourceTexts, strtoupper($sourceLang), $deeplTarget);
+
+                    foreach ($translated as $i => $text) {
+                        $model->setTranslation($fieldOrder[$i], $targetLang, $text);
+                    }
+                }
+            }
+
+            $model->save();
+            DB::commit();
+
+            return response()->json(['success' => true, 'message' => 'Gespeichert und übersetzt']);
+
+        } catch (\Throwable $e) {
+            DB::rollBack();
+            Log::error('[SeoGeo] Apply failed', ['message' => $e->getMessage()]);
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
+    }
+
+    private function quickStatus(array $item, array $locales, array $seoFields, int $totalSlots): string
+    {
+        $filled = 0;
+        foreach ($seoFields as $field) {
+            foreach ($locales as $locale) {
+                if (filled($item['model']->getTranslation($field, $locale, false))) $filled++;
+            }
+        }
+        if ($filled === $totalSlots) return 'complete';
+        if ($filled === 0) return 'empty';
+        return 'partial';
+    }
+}

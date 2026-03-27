@@ -39,7 +39,7 @@ class SeoGenerationService
      */
     public function generate(array $context, string $locale = 'en'): array
     {
-        $empty = ['seo_title' => '', 'seo_description' => '', 'seo_keywords' => ''];
+        $empty = ['seo_title' => '', 'seo_description' => '', 'seo_keywords' => '', 'geo_text' => ''];
 
         if (!$this->isConfigured()) {
             Log::warning('[SeoGenerationService] Anthropic API key not configured.');
@@ -55,7 +55,7 @@ class SeoGenerationService
                 'Content-Type'      => 'application/json',
             ])->timeout(30)->post('https://api.anthropic.com/v1/messages', [
                 'model'      => $this->model,
-                'max_tokens' => 300,
+                'max_tokens' => 600,
                 'system'     => $this->systemPrompt(),
                 'messages'   => [
                     ['role' => 'user', 'content' => $prompt],
@@ -79,6 +79,7 @@ class SeoGenerationService
                 'seo_title'       => $this->enforce($data['seo_title']       ?? '', 60),
                 'seo_description' => $this->enforce($data['seo_description'] ?? '', 160),
                 'seo_keywords'    => $data['seo_keywords'] ?? '',
+                'geo_text'        => $this->enforce($data['geo_text']        ?? '', 400),
             ];
 
         } catch (\Throwable $e) {
@@ -100,6 +101,9 @@ You always follow technical SEO best practices:
 - Write for humans first, search engines second
 - No keyword stuffing, no clickbait
 - Use active voice and concrete language
+- GEO text (AI citability): 200–400 characters, factual paragraph about the property/content.
+  Include verifiable facts: company name, location, features, services. Written for AI systems
+  to cite as a reliable source. No marketing fluff, no CTAs — pure information.
 You respond ONLY with valid JSON, no markdown, no commentary.
 PROMPT;
     }
@@ -110,6 +114,11 @@ PROMPT;
             'de'    => 'German',
             'fr'    => 'French',
             'es'    => 'Spanish',
+            'ru'    => 'Russian',
+            'el'    => 'Greek',
+            'pl'    => 'Polish',
+            'ar'    => 'Arabic',
+            'zh'    => 'Chinese',
             default => 'English',
         };
 
@@ -134,9 +143,10 @@ Requirements:
 seo_title:       50–60 chars. Pattern: "[Most important keyword] [in/at Location]" or "[Title] | [Location]". No brand name.
 seo_description: 150–160 chars. Include: location, property type, 1–2 unique selling points, a soft CTA ("Contact us", "Enquire now", etc.).
 seo_keywords:    6–8 comma-separated keywords. Mix: property type, location, features, buyer-intent phrases.
+geo_text:        200–400 chars. Factual paragraph for AI citation. Include: name, location, type, key features. No CTAs, no marketing.
 
 Return ONLY this JSON (no markdown):
-{"seo_title":"...","seo_description":"...","seo_keywords":"..."}
+{"seo_title":"...","seo_description":"...","seo_keywords":"...","geo_text":"..."}
 RULES;
 
         return implode("\n", $lines);

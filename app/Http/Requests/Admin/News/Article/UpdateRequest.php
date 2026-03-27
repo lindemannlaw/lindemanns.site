@@ -39,6 +39,8 @@ class UpdateRequest extends FormRequest
             $rules['seo_description.' . $locale] = ['nullable', 'string', 'max:255'];
             $rules['seo_keywords'] = ['nullable', 'array'];
             $rules['seo_keywords.' . $locale] = ['nullable', 'string', 'max:255'];
+            $rules['geo_text'] = ['nullable', 'array'];
+            $rules['geo_text.' . $locale] = ['nullable', 'string', 'max:5000'];
         }
 
         return $rules;

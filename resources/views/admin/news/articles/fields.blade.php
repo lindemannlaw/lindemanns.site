@@ -60,6 +60,14 @@
                             :placeholder="__('admin.seo_keywords')"
                             :required="false"
                         />
+
+                        <!-- geo text -->
+                        <x-admin.field.textarea
+                            :name="'geo_text['. $lang .']'"
+                            :value="old('geo_text.' . $lang, isset($article) ? $article->getTranslation('geo_text', $lang) : null)"
+                            :placeholder="__('admin.geo_text')"
+                            :required="false"
+                        />
                     </div>
                 </x-admin.tabs.pane>
             @endforeach

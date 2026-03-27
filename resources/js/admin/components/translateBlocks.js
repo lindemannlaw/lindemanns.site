@@ -19,6 +19,7 @@ const FIELD_LABELS = {
     seo_title:         'SEO Titel',
     seo_description:   'SEO Beschreibung',
     seo_keywords:      'SEO Keywords',
+    geo_text:          'GEO Text',
     property_type:     'Immobilien-Typ',
     status:            'Status',
     year_built:        'Baujahr',
@@ -257,7 +258,7 @@ async function handleGenerateSeo(button) {
 
         // Mark SEO fields as translated (both locales filled) so they don't show in translation overlay
         if (updateTsUrl) {
-            postTimestampUpdate(updateTsUrl, 'seo', ['seo_title', 'seo_description', 'seo_keywords']);
+            postTimestampUpdate(updateTsUrl, 'seo', ['seo_title', 'seo_description', 'seo_keywords', 'geo_text']);
         }
 
         // Also update the translate button's timestamps — mark as both changed AND translated
@@ -265,7 +266,7 @@ async function handleGenerateSeo(button) {
         if (translateBtn) {
             const ts = getTimestamps(translateBtn);
             const now = new Date().toISOString();
-            ['seo_title', 'seo_description', 'seo_keywords'].forEach(k => {
+            ['seo_title', 'seo_description', 'seo_keywords', 'geo_text'].forEach(k => {
                 ts[k] = { ...(ts[k] ?? {}), en_changed_at: now, de_translated_at: now };
             });
             translateBtn.dataset.textTimestamps = JSON.stringify(ts);
@@ -798,11 +799,12 @@ async function generateSeoFields(form, locale, generateSeoUrl) {
         throw new Error(err.error || `SEO generation failed: HTTP ${response.status}`);
     }
 
-    const { seo_title, seo_description, seo_keywords } = await response.json();
+    const { seo_title, seo_description, seo_keywords, geo_text } = await response.json();
 
     set(`seo_title[${locale}]`,       seo_title);
     set(`seo_description[${locale}]`, seo_description);
     set(`seo_keywords[${locale}]`,    seo_keywords);
+    set(`geo_text[${locale}]`,        geo_text);
 }
 
 function stripHtml(str) {
