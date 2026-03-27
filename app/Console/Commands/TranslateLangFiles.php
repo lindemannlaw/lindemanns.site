@@ -105,24 +105,15 @@ class TranslateLangFiles extends Command
             return;
         }
 
-        // Batch translate (DeepL handles up to 50 at a time)
-        $translated = [];
-        $chunks = array_chunk($values, 50, true);
-        $chunkKeys = array_chunk($keys, 50, true);
+        // Translate all values via DeepL (service handles batching internally)
+        $items = array_map(fn ($text) => ['text' => (string) $text, 'isHtml' => false], $values);
+        $translated = $deepl->translate($items, strtoupper($this->option('source')), $deeplTarget);
 
-        foreach ($chunks as $i => $chunk) {
-            $items = array_map(fn ($text) => ['text' => (string) $text, 'isHtml' => false], $chunk);
-            $results = $deepl->translate($items, strtoupper($this->option('source')), $deeplTarget);
-            $translated = array_merge($translated, $results);
-
-            // Small delay between batches to avoid rate limits
-            if (count($chunks) > 1 && $i < count($chunks) - 1) {
-                usleep(300000); // 300ms
-            }
+        // Reconstruct nested array — pair keys with translated values
+        $translatedFlat = [];
+        foreach ($keys as $i => $key) {
+            $translatedFlat[$key] = $translated[$i] ?? $values[$i];
         }
-
-        // Reconstruct nested array
-        $translatedFlat = array_combine($keys, $translated);
         $translatedData = $this->unflattenArray($translatedFlat);
 
         // Write PHP file
