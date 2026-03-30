@@ -3,20 +3,25 @@
 @section('title', __('admin.translation_check') . ' - ' . config('app.name'))
 
 @section('panel')
-    <x-admin.main-panel :title="__('admin.translation_check')">
-        <div class="form-check mb-0 me-auto">
+    {{-- Custom 3-col panel: title (sidebar width) | select-all | buttons --}}
+    <div id="mainPanel" class="main-panel d-flex align-items-center px-3 px-sm-4 border-bottom border-dark border-opacity-25 shadow-sm bg-white">
+        <div class="py-2 pe-2 fs-4 lh-1 fw-semibold flex-shrink-0"
+             style="width:calc(220px + 1.25rem);">{{ __('admin.translation_check') }}</div>
+        <div class="form-check mb-0 py-2 me-auto">
             <input class="form-check-input" type="checkbox" id="selectAll">
             <label class="form-check-label small" for="selectAll">Alle auswählen</label>
         </div>
-        <button type="button" class="btn btn-sm btn-outline-primary" id="btnTranslateSelected" disabled>
-            <svg class="bi" width="16" height="16" fill="currentColor"><use xlink:href="/img/icons/bootstrap-icons.svg#translate"/></svg>
-            Mit DeepL übersetzen (<span id="selectedCount">0</span>)
-        </button>
-        <button type="button" class="btn btn-sm btn-primary" id="btnApplyAll" disabled>
-            <svg class="bi" width="16" height="16" fill="currentColor"><use xlink:href="/img/icons/bootstrap-icons.svg#check2-all"/></svg>
-            Übernehmen
-        </button>
-    </x-admin.main-panel>
+        <div class="d-flex align-items-center py-2 gap-3">
+            <button type="button" class="btn btn-sm btn-outline-primary" id="btnTranslateSelected" disabled>
+                <svg class="bi" width="16" height="16" fill="currentColor"><use xlink:href="/img/icons/bootstrap-icons.svg#translate"/></svg>
+                Mit DeepL übersetzen (<span id="selectedCount">0</span>)
+            </button>
+            <button type="button" class="btn btn-sm btn-primary" id="btnApplyAll" disabled>
+                <svg class="bi" width="16" height="16" fill="currentColor"><use xlink:href="/img/icons/bootstrap-icons.svg#check2-all"/></svg>
+                Übernehmen
+            </button>
+        </div>
+    </div>
 @endsection
 
 @section('content')
