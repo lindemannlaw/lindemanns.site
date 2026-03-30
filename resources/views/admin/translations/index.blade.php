@@ -134,8 +134,11 @@
                                         <label class="form-label small text-muted">
                                             <span class="badge bg-light text-dark border">{{ strtoupper($sourceLang) }}</span>
                                             Quelltext
+                                            <button type="button" class="btn btn-sm btn-link p-0 ms-2 btn-save-source" data-index="{{ $i }}" title="Quelltext speichern" style="display:none;">
+                                                <svg class="bi" width="14" height="14" fill="currentColor"><use xlink:href="/img/icons/bootstrap-icons.svg#floppy"/></svg>
+                                            </button>
                                         </label>
-                                        <div class="form-control form-control-sm bg-light" style="white-space: pre-wrap;">{{ \Illuminate\Support\Str::limit($item['source'], 300) }}</div>
+                                        <textarea class="form-control form-control-sm source-input" data-index="{{ $i }}" style="overflow:hidden; background: var(--bs-light);">{{ $item['source'] }}</textarea>
                                     </div>
 
                                     {{-- Target (editable) --}}
@@ -210,9 +213,53 @@ document.addEventListener('DOMContentLoaded', function () {
         textarea.style.height = 'auto';
         textarea.style.height = textarea.scrollHeight + 'px';
     }
-    document.querySelectorAll('.translation-input').forEach(ta => {
+    document.querySelectorAll('.translation-input, .source-input').forEach(ta => {
         autoResize(ta);
         ta.addEventListener('input', () => autoResize(ta));
+    });
+
+    // Source text: show save button on change, save via apply endpoint
+    document.querySelectorAll('.source-input').forEach(ta => {
+        const idx = ta.dataset.index;
+        const saveBtn = document.querySelector(`.btn-save-source[data-index="${idx}"]`);
+        const originalValue = ta.value;
+
+        ta.addEventListener('input', () => {
+            if (saveBtn) saveBtn.style.display = ta.value !== originalValue ? '' : 'none';
+        });
+    });
+
+    document.querySelectorAll('.btn-save-source').forEach(btn => {
+        btn.addEventListener('click', async () => {
+            const idx = btn.dataset.index;
+            const item = ITEMS[idx];
+            const ta = document.querySelector(`.source-input[data-index="${idx}"]`);
+            if (!item || !ta) return;
+
+            btn.disabled = true;
+            const origHtml = btn.innerHTML;
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
+
+            try {
+                const res = await fetch(APPLY_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': CSRF },
+                    body: JSON.stringify({
+                        items: [{ type: item.type, id: item.id, field: item.field, text: ta.value }],
+                        target_lang: SOURCE_LANG,
+                    }),
+                });
+                const data = await res.json();
+                if (data.error) throw new Error(data.error);
+                btn.style.display = 'none';
+                showToast('Quelltext gespeichert', 'bg-success');
+            } catch (e) {
+                showToast('Fehler: ' + e.message, 'bg-danger');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = origHtml;
+            }
+        });
     });
 
     // Select all
