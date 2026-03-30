@@ -99,34 +99,36 @@
                         <div class="collapse show" id="sidebarStatus">
                             <div class="d-flex flex-column px-2 py-2" style="gap:2px;">
                                 @foreach($statusConfig as $key => $cfg)
-                                    @php $active = $statusFilter === $key; @endphp
-                                    <a href="{{ route('admin.translations.index', array_merge(request()->only(['type', 'lang', 'id']), ['status' => $key])) }}"
-                                       class="d-flex align-items-center gap-2 px-2 py-1 rounded text-decoration-none small {{ $active ? 'fw-semibold' : 'text-body' }}"
-                                       style="{{ $active ? 'background:rgba(0,0,0,.06);' : '' }}">
-                                        <svg class="bi flex-shrink-0 {{ $active ? ($cfg['badgeText'] ?? 'text-body') : 'invisible' }}"
-                                             width="13" height="13" fill="currentColor">
-                                            <use xlink:href="/img/icons/bootstrap-icons.svg#check2"/>
-                                        </svg>
-                                        <span class="flex-grow-1">{{ $cfg['label'] }}</span>
+                                    @php $active = in_array($key, $statusFilter); @endphp
+                                    <label class="d-flex align-items-center gap-2 px-2 py-1 rounded small status-filter-label"
+                                           style="cursor:pointer;{{ $active ? 'background:rgba(0,0,0,.06);' : '' }}">
+                                        <input type="checkbox"
+                                               class="form-check-input flex-shrink-0 status-check"
+                                               data-status="{{ $key }}"
+                                               style="cursor:pointer;margin-top:0;accent-color:{{ $cfg['accentColor'] ?? 'auto' }};"
+                                               {{ $active ? 'checked' : '' }}>
+                                        <span class="flex-grow-1 {{ $active ? 'fw-semibold ' . ($cfg['badgeText'] ?? '') : 'text-body' }}">
+                                            {{ $cfg['label'] }}
+                                        </span>
                                         @if($key !== 'all' && isset($counts[$key]))
                                             <span class="badge {{ $active ? ($cfg['badge'] ?? 'bg-secondary') : 'bg-secondary bg-opacity-50 text-body' }} ms-auto"
                                                   style="font-size:.7em;">{{ $counts[$key] }}</span>
                                         @endif
-                                    </a>
+                                    </label>
                                 @endforeach
                             </div>
                         </div>
                     </div>
 
                     {{-- Inhalt --}}
-                    <div class="mb-2">
-                        <div class="d-flex align-items-center justify-content-between px-3 py-2 user-select-none border rounded sidebar-section-toggle"
-                             style="cursor:pointer; background:var(--bs-light);"
+                    <div class="border rounded mb-2">
+                        <div class="d-flex align-items-center justify-content-between px-3 py-2 user-select-none sidebar-section-toggle"
+                             style="cursor:pointer; background:var(--bs-light); border-radius:inherit;"
                              data-bs-toggle="collapse" data-bs-target="#sidebarContent" aria-expanded="true">
                             <span class="text-uppercase fw-semibold text-muted" style="font-size:.7rem;letter-spacing:.05em;">Inhalt</span>
                             <svg class="bi sidebar-chevron" width="11" height="11" fill="currentColor" style="transition:transform .2s;flex-shrink:0;"><use xlink:href="/img/icons/bootstrap-icons.svg#chevron-up"/></svg>
                         </div>
-                        <div class="collapse show pt-2" id="sidebarContent">
+                        <div class="collapse show" id="sidebarContent">
                             @include('admin.partials.content-nav', [
                                 'dashboard'   => 'translations',
                                 'typeFilter'  => $typeFilter,
@@ -134,6 +136,7 @@
                                 'navPages'    => $navPages,
                                 'navSections' => $navSections,
                                 'extraParams' => ['lang' => $targetLang, 'status' => $statusFilter],
+                                'inner'       => true,
                             ])
                         </div>
                     </div>
@@ -264,7 +267,7 @@ document.addEventListener('DOMContentLoaded', function () {
         const targetEl = document.querySelector(targetId);
         const chevron  = toggle.querySelector('.sidebar-chevron');
         if (!targetEl || !chevron) return;
-        targetEl.addEventListener('hide.bs.collapse', () => chevron.style.transform = 'rotate(-90deg)');
+        targetEl.addEventListener('hide.bs.collapse', () => chevron.style.transform = 'rotate(180deg)');
         targetEl.addEventListener('show.bs.collapse', () => chevron.style.transform = 'rotate(0deg)');
     });
 
@@ -423,6 +426,37 @@ document.addEventListener('DOMContentLoaded', function () {
         document.getElementById('btnTranslateSelected').disabled = count === 0;
         document.getElementById('btnApplyAll').disabled = count === 0;
     }
+
+    // ── Status multi-select (checkbox → URL navigation) ──────────────────
+    document.querySelectorAll('.status-check').forEach(cb => {
+        cb.addEventListener('change', () => {
+            const allCb    = document.querySelector('.status-check[data-status="all"]');
+            const specific = Array.from(document.querySelectorAll('.status-check:not([data-status="all"]):checked'))
+                                  .map(c => c.dataset.status);
+
+            if (cb.dataset.status === 'all' && cb.checked) {
+                // "Alle" checked → deselect specific
+                document.querySelectorAll('.status-check:not([data-status="all"])').forEach(c => c.checked = false);
+            } else if (cb.dataset.status !== 'all') {
+                // Specific item changed → uncheck "Alle"
+                if (allCb) allCb.checked = false;
+            }
+
+            const now = Array.from(document.querySelectorAll('.status-check:not([data-status="all"]):checked'))
+                             .map(c => c.dataset.status);
+
+            const url = new URL(window.location.href);
+            // Remove both plain and array variants
+            url.searchParams.delete('status');
+            url.searchParams.delete('status[]');
+            if (now.length === 0) {
+                url.searchParams.set('status', 'all');
+            } else {
+                now.forEach(s => url.searchParams.append('status[]', s));
+            }
+            window.location.href = url.toString();
+        });
+    });
 
     // ── Language multi-select ─────────────────────────────────────────────
     document.getElementById('selectAllLangs')?.addEventListener('click', (e) => {
