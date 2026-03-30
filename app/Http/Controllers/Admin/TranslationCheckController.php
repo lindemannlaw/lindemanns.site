@@ -88,7 +88,6 @@ class TranslationCheckController extends Controller
                             if ($subLabel === null) continue; // skip numeric/irrelevant keys
                             $subSource = $sourceArr[$subKey] ?? '';
                             $subTarget = $targetArr[$subKey] ?? '';
-                            $subStatus = $this->fieldStatus($subSource, $subTarget);
 
                             // All locale values for multi-lang display
                             $allSubTranslations = [];
@@ -98,6 +97,9 @@ class TranslationCheckController extends Controller
                                 if (!is_array($tArr)) $tArr = [];
                                 $allSubTranslations[$tLocale] = (string) ($tArr[$subKey] ?? '');
                             }
+
+                            // Worst-case status across all locales
+                            $subStatus = $this->worstStatus((string) $subSource, $allSubTranslations);
 
                             $allItems[] = [
                                 'type'         => $type,
@@ -128,7 +130,6 @@ class TranslationCheckController extends Controller
                         foreach ($paths as [$dotPath, $pathLabel]) {
                             $sourceText = (string) (data_get($sourceData, $dotPath) ?? '');
                             $targetText = (string) (data_get($targetData, $dotPath) ?? '');
-                            $subStatus  = $this->fieldStatus($sourceText, $targetText);
 
                             $allSubTranslations = [];
                             foreach ($locales as $tLocale) {
@@ -137,6 +138,8 @@ class TranslationCheckController extends Controller
                                 if (!is_array($tData)) $tData = [];
                                 $allSubTranslations[$tLocale] = (string) (data_get($tData, $dotPath) ?? '');
                             }
+
+                            $subStatus = $this->worstStatus($sourceText, $allSubTranslations);
 
                             $allItems[] = [
                                 'type'         => $type,
@@ -167,7 +170,6 @@ class TranslationCheckController extends Controller
                         foreach ($paths as [$dotPath, $pathLabel]) {
                             $sourceText = (string) (data_get($sourceBlocks, $dotPath) ?? '');
                             $targetText = (string) (data_get($targetBlocks, $dotPath) ?? '');
-                            $subStatus  = $this->fieldStatus($sourceText, $targetText);
 
                             $allSubTranslations = [];
                             foreach ($locales as $tLocale) {
@@ -176,6 +178,8 @@ class TranslationCheckController extends Controller
                                 if (!is_array($tBlocks)) $tBlocks = [];
                                 $allSubTranslations[$tLocale] = (string) (data_get($tBlocks, $dotPath) ?? '');
                             }
+
+                            $subStatus = $this->worstStatus($sourceText, $allSubTranslations);
 
                             $allItems[] = [
                                 'type'         => $type,
@@ -206,7 +210,6 @@ class TranslationCheckController extends Controller
                         foreach ($paths as [$dotPath, $pathLabel]) {
                             $sourceText = (string) (data_get($sourceData, $dotPath) ?? '');
                             $targetText = (string) (data_get($targetData, $dotPath) ?? '');
-                            $subStatus  = $this->fieldStatus($sourceText, $targetText);
 
                             $allSubTranslations = [];
                             foreach ($locales as $tLocale) {
@@ -215,6 +218,8 @@ class TranslationCheckController extends Controller
                                 if (!is_array($tData)) $tData = [];
                                 $allSubTranslations[$tLocale] = (string) (data_get($tData, $dotPath) ?? '');
                             }
+
+                            $subStatus = $this->worstStatus($sourceText, $allSubTranslations);
 
                             $allItems[] = [
                                 'type'         => $type,
@@ -237,9 +242,6 @@ class TranslationCheckController extends Controller
                     $sourceVal = $record->getTranslation($field, $sourceLang, false);
                     $targetVal = $record->getTranslation($field, $targetLang, false);
 
-                    // Determine status
-                    $status = $this->fieldStatus($sourceVal, $targetVal);
-
                     // Flatten arrays/objects for display
                     $sourceDisplay = is_array($sourceVal) ? json_encode($sourceVal, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT) : (string) ($sourceVal ?? '');
                     $targetDisplay = is_array($targetVal) ? json_encode($targetVal, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT) : (string) ($targetVal ?? '');
@@ -256,6 +258,9 @@ class TranslationCheckController extends Controller
                         $tVal = $record->getTranslation($field, $tLocale, false);
                         $allTranslations[$tLocale] = is_array($tVal) ? json_encode($tVal, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT) : (string) ($tVal ?? '');
                     }
+
+                    // Worst-case status across ALL locales (ok only when every locale is translated and not inherited)
+                    $status = $this->worstStatus($sourceDisplay, $allTranslations);
 
                     $allItems[] = [
                         'type'          => $type,
@@ -542,6 +547,24 @@ class TranslationCheckController extends Controller
         }
 
         return $paths;
+    }
+
+    /**
+     * Return the worst status across all locale values (untranslated beats inherited beats ok).
+     * @param array<string,string> $localeValues map of locale → value string
+     */
+    private function worstStatus(mixed $source, array $localeValues): string
+    {
+        $priority = ['missing' => 0, 'untranslated' => 1, 'inherited' => 2, 'ok' => 3];
+        $worst = 'ok';
+        foreach ($localeValues as $val) {
+            $s = $this->fieldStatus($source, $val);
+            if ($priority[$s] < $priority[$worst]) {
+                $worst = $s;
+                if ($worst === 'missing') break; // can't get worse
+            }
+        }
+        return $worst;
     }
 
     private function fieldStatus(mixed $sourceVal, mixed $targetVal): string
