@@ -26,7 +26,9 @@ class TranslationCheckController extends Controller
 
         $typeFilter   = $request->get('type', 'all');
         $targetLang   = $request->get('lang', $locales[1] ?? 'de');
-        $statusFilter = $request->get('status', 'all');
+        // Accept single value or array: ?status=all  or  ?status[]=untranslated&status[]=ok
+        $rawStatus    = $request->get('status', 'all');
+        $statusFilter = is_array($rawStatus) ? array_values($rawStatus) : [$rawStatus];
         $idFilter     = $request->get('id', null);
 
         // Records list for the sub-filter dropdown (only when a specific type is selected)
@@ -282,9 +284,9 @@ class TranslationCheckController extends Controller
         ];
 
         // Apply status filter for display only
-        $items = $statusFilter === 'all'
+        $items = in_array('all', $statusFilter)
             ? $allItems
-            : array_values(array_filter($allItems, fn ($i) => $i['status'] === $statusFilter));
+            : array_values(array_filter($allItems, fn ($i) => in_array($i['status'], $statusFilter)));
 
         // Available types
         $types = collect($this->registry->all())->map(fn ($m, $k) => ['key' => $k, 'label' => $m['labelDe']])->values()->all();

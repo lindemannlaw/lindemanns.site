@@ -42,7 +42,7 @@ $hdrStyle = function () use (&$sectionIdx): string {
 };
 @endphp
 
-<div class="list-group list-group-flush border rounded" style="font-size: .85rem;">
+<div class="{{ ($inner ?? false) ? 'list-group list-group-flush' : 'list-group list-group-flush border rounded' }}" style="font-size: .85rem;">
 
     {{-- All / clear filter --}}
     @php $allLink = route($route, $extraParams ?? []); @endphp
