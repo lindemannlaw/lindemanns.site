@@ -164,7 +164,9 @@
                         <form method="GET" action="{{ route('admin.translations.index') }}" class="d-flex gap-2 align-items-center">
                             <input type="hidden" name="type" value="{{ $typeFilter }}">
                             <input type="hidden" name="lang" value="{{ $targetLang }}">
-                            <input type="hidden" name="status" value="{{ $statusFilter }}">
+                            @foreach($statusFilter as $s)
+                                <input type="hidden" name="status[]" value="{{ $s }}">
+                            @endforeach
                             <select name="id" class="form-select form-select-sm" style="width:auto;max-width:240px;" onchange="this.form.submit()">
                                 <option value="">— Alle {{ collect($types)->firstWhere('key', $typeFilter)['label'] ?? '' }} —</option>
                                 @foreach($typeRecords as $rec)
