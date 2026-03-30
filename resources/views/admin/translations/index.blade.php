@@ -171,6 +171,25 @@
             </div>
         </div>
     </x-admin.container>
+
+    {{-- Language publish confirm modal --}}
+    <div class="modal fade" id="langPublishModal" tabindex="-1" aria-labelledby="langPublishModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header border-0 pb-0">
+                    <h6 class="modal-title fw-semibold" id="langPublishModalLabel">Sprache umschalten</h6>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p id="langPublishModalText" class="mb-0"></p>
+                </div>
+                <div class="modal-footer border-0 pt-0">
+                    <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Abbrechen</button>
+                    <button type="button" class="btn btn-sm btn-primary" id="langPublishModalConfirm">Ja, umschalten</button>
+                </div>
+            </div>
+        </div>
+    </div>
 @endsection
 
 @push('footer-scripts')
@@ -353,39 +372,65 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // Language publish/draft toggles
     const TOGGLE_BASE = @json(route('admin.language-settings.toggle', ['locale' => '__LOCALE__']));
+    const langModal = new bootstrap.Modal(document.getElementById('langPublishModal'));
+    const langModalText = document.getElementById('langPublishModalText');
+    const langModalConfirm = document.getElementById('langPublishModalConfirm');
+    let pendingToggleBtn = null;
+
     document.querySelectorAll('.lang-publish-toggle').forEach(btn => {
-        btn.addEventListener('click', async (e) => {
+        btn.addEventListener('click', (e) => {
             e.preventDefault();
             e.stopPropagation();
             const locale = btn.dataset.locale;
-            const url = TOGGLE_BASE.replace('__LOCALE__', locale);
-            try {
-                const res = await fetch(url, {
-                    method: 'POST',
-                    headers: { 'X-CSRF-TOKEN': CSRF, 'Accept': 'application/json' },
-                });
-                const data = await res.json();
-                if (data.error) throw new Error(data.error);
+            const currentlyPublished = btn.dataset.published === '1';
+            const action = currentlyPublished ? 'auf <strong>Draft</strong> setzen' : 'auf <strong>Live</strong> stellen';
+            langModalText.innerHTML = `Möchtest du <strong>${locale.toUpperCase()}</strong> wirklich ${action}?`
+                + (currentlyPublished
+                    ? '<br><span class="small text-muted mt-1 d-block">Die Sprache wird im Frontend ausgeblendet.</span>'
+                    : '<span class="small text-muted mt-1 d-block">Die Sprache erscheint sofort im Frontend.</span>');
 
-                const isPublished = data.is_published;
-                btn.dataset.published = isPublished ? '1' : '0';
-                const badge = btn.querySelector('.badge');
-                badge.textContent = isPublished ? 'Live' : 'Draft';
-                badge.className = 'badge ' + (isPublished ? 'bg-success' : 'bg-secondary');
-                btn.title = isPublished ? 'Live – klicken für Draft' : 'Draft – klicken für Live';
+            // Update confirm button color based on action
+            langModalConfirm.className = 'btn btn-sm ' + (currentlyPublished ? 'btn-danger' : 'btn-success');
+            langModalConfirm.textContent = currentlyPublished ? 'Ja, auf Draft setzen' : 'Ja, live stellen';
 
-                // Update the dropdown button badge too
-                const dropBtn = btn.closest('.dropdown')?.querySelector('.dropdown-toggle .badge');
-                if (dropBtn && locale === TARGET_LANG) {
-                    dropBtn.textContent = isPublished ? 'Live' : 'Draft';
-                    dropBtn.className = 'badge ms-1 ' + (isPublished ? 'bg-success' : 'bg-secondary');
-                }
-
-                showToast(`${locale.toUpperCase()} ist jetzt ${isPublished ? 'Live' : 'Draft'}`, isPublished ? 'bg-success' : 'bg-secondary');
-            } catch (e) {
-                showToast('Fehler: ' + e.message, 'bg-danger');
-            }
+            pendingToggleBtn = btn;
+            langModal.show();
         });
+    });
+
+    langModalConfirm.addEventListener('click', async () => {
+        langModal.hide();
+        if (!pendingToggleBtn) return;
+        const btn = pendingToggleBtn;
+        pendingToggleBtn = null;
+        const locale = btn.dataset.locale;
+        const url = TOGGLE_BASE.replace('__LOCALE__', locale);
+        try {
+            const res = await fetch(url, {
+                method: 'POST',
+                headers: { 'X-CSRF-TOKEN': CSRF, 'Accept': 'application/json' },
+            });
+            const data = await res.json();
+            if (data.error) throw new Error(data.error);
+
+            const isPublished = data.is_published;
+            btn.dataset.published = isPublished ? '1' : '0';
+            const badge = btn.querySelector('.badge');
+            badge.textContent = isPublished ? 'Live' : 'Draft';
+            badge.className = 'badge ' + (isPublished ? 'bg-success' : 'bg-secondary');
+            btn.title = isPublished ? 'Live – klicken für Draft' : 'Draft – klicken für Live';
+
+            // Update the dropdown button badge if it's the active language
+            const dropBtnBadge = btn.closest('.dropdown')?.querySelector('.dropdown-toggle .badge');
+            if (dropBtnBadge && locale === TARGET_LANG) {
+                dropBtnBadge.textContent = isPublished ? 'Live' : 'Draft';
+                dropBtnBadge.className = 'badge ms-1 ' + (isPublished ? 'bg-success' : 'bg-secondary');
+            }
+
+            showToast(`${locale.toUpperCase()} ist jetzt ${isPublished ? 'Live' : 'Draft'}`, isPublished ? 'bg-success' : 'bg-secondary');
+        } catch (e) {
+            showToast('Fehler: ' + e.message, 'bg-danger');
+        }
     });
 });
 </script>
