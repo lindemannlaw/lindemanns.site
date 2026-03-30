@@ -44,6 +44,13 @@ $hdrStyle = function () use (&$sectionIdx): string {
 
 <div class="list-group list-group-flush border rounded" style="font-size: .85rem;">
 
+    {{-- All / clear filter --}}
+    @php $allLink = route($route, $extraParams ?? []); @endphp
+    <a href="{{ $allLink }}"
+       class="{{ 'list-group-item list-group-item-action border-0 py-1 px-3 small fw-semibold' . ($typeFilter === 'all' ? ' active' : '') }}">
+        Alle
+    </a>
+
     {{-- About --}}
     <div class="{{ $hdrClass }}" style="{{ $hdrStyle() }}">
         About
