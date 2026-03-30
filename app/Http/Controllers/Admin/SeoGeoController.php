@@ -47,7 +47,7 @@ class SeoGeoController extends Controller
 
             $item['filled'] = $filled;
             $item['total'] = $totalSlots;
-            $item['percent'] = $totalSlots > 0 ? round($filled / $totalSlots * 100) : 0;
+            $item['percent'] = $totalSlots > 0 ? (int) round($filled / $totalSlots * 100) : 0;
             $item['seo'] = $seoPreview;
 
             if ($item['percent'] === 100) $item['status'] = 'complete';
