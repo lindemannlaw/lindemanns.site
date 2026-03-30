@@ -92,7 +92,7 @@ class ProjectController extends Controller
         if ($request->ajax()) {
             $sourceLang  = config('app.fallback_locale', 'en');
             $targetLangs = array_values(array_filter(
-                \App\Models\LanguageSetting::publishedKeys(),
+                supported_languages_keys(),
                 fn($l) => $l !== $sourceLang
             ));
 

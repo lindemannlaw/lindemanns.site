@@ -252,6 +252,13 @@ class TranslationCheckController extends Controller
         // Available types
         $types = collect($this->registry->all())->map(fn ($m, $k) => ['key' => $k, 'label' => $m['labelDe']])->values()->all();
 
+        $navPages = \App\Models\Page::whereIn('slug', [
+            'about', 'services', 'portfolio', 'news', 'contacts', 'imprint', 'privacy-notice', 'terms-of-use',
+        ])->pluck('id', 'slug')->all();
+
+        $navSections = \App\Models\SiteSection::whereIn('slug', ['who-we-are', 'contact-us'])
+            ->pluck('id', 'slug')->all();
+
         return view('admin.translations.index', [
             'items'        => $items,
             'types'        => $types,
@@ -264,6 +271,8 @@ class TranslationCheckController extends Controller
             'sourceLang'   => $sourceLang,
             'counts'       => $counts,
             'langSettings' => \App\Models\LanguageSetting::allWithStatus($sourceLang),
+            'navPages'     => $navPages,
+            'navSections'  => $navSections,
         ]);
     }
 
