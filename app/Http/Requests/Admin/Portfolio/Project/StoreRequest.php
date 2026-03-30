@@ -49,12 +49,18 @@ class StoreRequest extends FormRequest
         $rules['seo_keywords'] = ['nullable', 'array'];
         $rules['geo_text'] = ['nullable', 'array'];
 
+        // Only the source language is required; all other locales are optional
+        // (translations are managed via the Translation Dashboard).
+        $sourceLang = config('app.fallback_locale', 'en');
+
         foreach (supported_languages_keys() as $locale) {
-            $rules['title.' . $locale] = ['required', 'string', 'max:255'];
-            $rules['short_description.' . $locale] = ['required', 'string'];
+            $isSource = $locale === $sourceLang;
+
+            $rules['title.' . $locale] = $isSource ? ['required', 'string', 'max:255'] : ['nullable', 'string', 'max:255'];
+            $rules['short_description.' . $locale] = $isSource ? ['required', 'string'] : ['nullable', 'string'];
             $rules['description.' . $locale] = ['nullable', 'string'];
-            $rules['description_blocks.' . $locale] = ['required', 'array', 'min:1'];
-            $rules['description_blocks.' . $locale . '.*.type'] = ['required', 'string', 'in:text,floating_gallery,text_column_row,video,embed,numbers'];
+            $rules['description_blocks.' . $locale] = $isSource ? ['required', 'array', 'min:1'] : ['nullable', 'array'];
+            $rules['description_blocks.' . $locale . '.*.type'] = ['nullable', 'string', 'in:text,floating_gallery,text_column_row,video,embed,numbers'];
             $rules['description_blocks.' . $locale . '.*.content'] = ['nullable', 'string'];
             $rules['description_blocks.' . $locale . '.*.headline'] = ['nullable', 'string', 'max:255'];
             $rules['description_blocks.' . $locale . '.*.headline_col_span'] = ['nullable', 'integer', 'min:1', 'max:12'];
@@ -74,7 +80,7 @@ class StoreRequest extends FormRequest
             $rules['description_blocks.' . $locale . '.*.items.*.col_start'] = ['nullable', 'integer', 'min:1', 'max:12'];
             $rules['description_blocks.' . $locale . '.*.items.*.image'] = ['nullable', 'string'];
             $rules['description_blocks.' . $locale . '.*.items.*.image_file'] = ['nullable', 'image', 'mimes:jpg,png,webp', 'max:20480'];
-            $rules['location.' . $locale] = ['required', 'string', 'max:255'];
+            $rules['location.' . $locale] = $isSource ? ['required', 'string', 'max:255'] : ['nullable', 'string', 'max:255'];
             $rules['tags.' . $locale . '.*'] = ['nullable', 'string', 'max:255'];
             $rules['property_details.' . $locale . '.*'] = ['nullable', 'string', 'max:255'];
 
@@ -90,9 +96,12 @@ class StoreRequest extends FormRequest
     public function withValidator($validator): void
     {
         $validator->after(function ($validator) {
-            $blocks = $this->input('description_blocks', []);
+            $blocks    = $this->input('description_blocks', []);
+            $sourceLang = config('app.fallback_locale', 'en');
 
-            foreach (supported_languages_keys() as $locale) {
+            // Only validate block structure for the source language;
+            // other locales are filled via the Translation Dashboard.
+            foreach ([$sourceLang] as $locale) {
                 $localeBlocks = data_get($blocks, $locale, []);
 
                 foreach ($localeBlocks as $blockIndex => $block) {
