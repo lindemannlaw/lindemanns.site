@@ -58,7 +58,6 @@ class TranslationCheckController extends Controller
 
                 // Fields skipped entirely (complex/nested, not translatable as free text)
                 $skipFields = [
-                    'description_blocks', // block editor JSON
                     'content_data',       // page-builder JSON
                     'details',            // service details JSON
                     'tags',               // structured tags array
@@ -110,6 +109,45 @@ class TranslationCheckController extends Controller
                                 'fieldLabel'   => $subLabel,
                                 'source'       => (string) $subSource,
                                 'target'       => (string) $subTarget,
+                                'status'       => $subStatus,
+                                'statusLabel'  => $this->statusLabel($subStatus),
+                                'statusClass'  => $this->statusClass($subStatus),
+                                'translations' => $allSubTranslations,
+                            ];
+                        }
+                        continue; // done with this field
+                    }
+
+                    // Expand description_blocks into individual translatable text paths
+                    if ($field === 'description_blocks') {
+                        $sourceBlocks = $record->getTranslation($field, $sourceLang, false) ?? [];
+                        $targetBlocks = $record->getTranslation($field, $targetLang, false) ?? [];
+                        if (!is_array($sourceBlocks)) $sourceBlocks = [];
+                        if (!is_array($targetBlocks)) $targetBlocks = [];
+
+                        $paths = $this->extractBlockTextPaths($sourceBlocks);
+                        foreach ($paths as [$dotPath, $pathLabel]) {
+                            $sourceText = (string) (data_get($sourceBlocks, $dotPath) ?? '');
+                            $targetText = (string) (data_get($targetBlocks, $dotPath) ?? '');
+                            $subStatus  = $this->fieldStatus($sourceText, $targetText);
+
+                            $allSubTranslations = [];
+                            foreach ($locales as $tLocale) {
+                                if ($tLocale === $sourceLang) continue;
+                                $tBlocks = $record->getTranslation($field, $tLocale, false) ?? [];
+                                if (!is_array($tBlocks)) $tBlocks = [];
+                                $allSubTranslations[$tLocale] = (string) (data_get($tBlocks, $dotPath) ?? '');
+                            }
+
+                            $allItems[] = [
+                                'type'         => $type,
+                                'typeLabel'    => $meta['labelDe'],
+                                'id'           => $record->id,
+                                'title'        => $title,
+                                'field'        => $field . '.' . $dotPath,
+                                'fieldLabel'   => $pathLabel,
+                                'source'       => $sourceText,
+                                'target'       => $targetText,
                                 'status'       => $subStatus,
                                 'statusLabel'  => $this->statusLabel($subStatus),
                                 'statusClass'  => $this->statusClass($subStatus),
@@ -215,11 +253,11 @@ class TranslationCheckController extends Controller
             $model = $this->registry->resolveModel($item['type'], $item['id']);
             if (!$model) continue;
 
-            // Support dot-notation for sub-fields (e.g. property_details.property_type)
+            // Support dot-notation for sub-fields (e.g. property_details.property_type, description_blocks.0.content)
             if (str_contains($item['field'], '.')) {
                 [$parentField, $subKey] = explode('.', $item['field'], 2);
                 $parentVal = $model->getTranslation($parentField, $request->source_lang, false);
-                $text = is_array($parentVal) ? (string) ($parentVal[$subKey] ?? '') : '';
+                $text = is_array($parentVal) ? (string) (data_get($parentVal, $subKey) ?? '') : '';
             } else {
                 $val = $model->getTranslation($item['field'], $request->source_lang, false);
                 $text = is_string($val) ? $val : '';
@@ -265,12 +303,21 @@ class TranslationCheckController extends Controller
                 $model = $this->registry->resolveModel($item['type'], $item['id']);
                 if (!$model) continue;
 
-                // Support dot-notation for sub-fields (e.g. property_details.property_type)
+                // Support dot-notation for sub-fields (e.g. property_details.property_type, description_blocks.0.content)
                 if (str_contains($item['field'], '.')) {
                     [$parentField, $subKey] = explode('.', $item['field'], 2);
                     $existing = $model->getTranslation($parentField, $request->target_lang, false) ?? [];
                     if (!is_array($existing)) $existing = [];
-                    $existing[$subKey] = $item['text'] ?? '';
+
+                    // description_blocks: initialise target structure from EN source if target is empty,
+                    // so non-text fields (image URLs, types, etc.) are preserved as single source of truth.
+                    if ($parentField === 'description_blocks' && empty($existing)) {
+                        $sourceLang = config('app.fallback_locale', 'en');
+                        $sourceBlocks = $model->getTranslation($parentField, $sourceLang, false) ?? [];
+                        $existing = is_array($sourceBlocks) ? json_decode(json_encode($sourceBlocks), true) : [];
+                    }
+
+                    data_set($existing, $subKey, $item['text'] ?? '');
                     $model->setTranslation($parentField, $request->target_lang, $existing);
                 } else {
                     $model->setTranslation($item['field'], $request->target_lang, $item['text'] ?? '');
@@ -285,6 +332,94 @@ class TranslationCheckController extends Controller
             Log::error('[TranslationCheck] Apply failed', ['message' => $e->getMessage()]);
             return response()->json(['error' => $e->getMessage()], 500);
         }
+    }
+
+    /**
+     * Extract all translatable text paths from a description_blocks array.
+     * Each returned tuple is [dot-notation path, human-readable German label].
+     * Paths are unique per block index, guaranteeing single-source-of-truth lookup.
+     *
+     * @param  array $blocks
+     * @return array<int, array{0: string, 1: string}>
+     */
+    private function extractBlockTextPaths(array $blocks): array
+    {
+        $paths = [];
+
+        foreach ($blocks as $blockIdx => $block) {
+            $type   = $block['type'] ?? '';
+            $prefix = (string) $blockIdx;
+            $bNum   = $blockIdx + 1;
+
+            switch ($type) {
+                case 'text':
+                    if (!empty($block['content'])) {
+                        $paths[] = ["{$prefix}.content", "Block {$bNum} – Text"];
+                    }
+                    break;
+
+                case 'text_column_row':
+                    foreach ($block['items'] ?? [] as $itemIdx => $item) {
+                        $ip   = "{$prefix}.items.{$itemIdx}";
+                        $col  = $itemIdx + 1;
+                        if (!empty($item['headline'])) {
+                            $paths[] = ["{$ip}.headline",  "Block {$bNum} – Spalte {$col} Titel"];
+                        }
+                        if (!empty($item['subhead'])) {
+                            $paths[] = ["{$ip}.subhead",   "Block {$bNum} – Spalte {$col} Untertitel"];
+                        }
+                        if (!empty($item['content'])) {
+                            $paths[] = ["{$ip}.content",   "Block {$bNum} – Spalte {$col} Text"];
+                        }
+                        if (!empty($item['link_text'])) {
+                            $paths[] = ["{$ip}.link_text", "Block {$bNum} – Spalte {$col} Link-Text"];
+                        }
+                    }
+                    break;
+
+                case 'floating_gallery':
+                    foreach ($block['items'] ?? [] as $itemIdx => $item) {
+                        $ip  = "{$prefix}.items.{$itemIdx}";
+                        $img = $itemIdx + 1;
+                        if (!empty($item['headline'])) {
+                            $paths[] = ["{$ip}.headline", "Block {$bNum} – Bild {$img} Titel"];
+                        }
+                        if (!empty($item['subhead'])) {
+                            $paths[] = ["{$ip}.subhead",  "Block {$bNum} – Bild {$img} Untertitel"];
+                        }
+                    }
+                    break;
+
+                case 'numbers':
+                    if (!empty($block['headline'])) {
+                        $paths[] = ["{$prefix}.headline", "Block {$bNum} – Kennzahlen Titel"];
+                    }
+                    foreach ($block['items'] ?? [] as $itemIdx => $item) {
+                        $ip  = "{$prefix}.items.{$itemIdx}";
+                        $num = $itemIdx + 1;
+                        if (!empty($item['subline'])) {
+                            $paths[] = ["{$ip}.subline", "Block {$bNum} – Zahl {$num} Subline"];
+                        }
+                        if (!empty($item['title'])) {
+                            $paths[] = ["{$ip}.title",   "Block {$bNum} – Zahl {$num} Bezeichnung"];
+                        }
+                    }
+                    break;
+
+                case 'video':
+                    if (!empty($block['headline'])) {
+                        $paths[] = ["{$prefix}.headline", "Block {$bNum} – Video Titel"];
+                    }
+                    if (!empty($block['content'])) {
+                        $paths[] = ["{$prefix}.content",  "Block {$bNum} – Video Text"];
+                    }
+                    break;
+
+                // embed, image, etc. have no free-text fields worth translating
+            }
+        }
+
+        return $paths;
     }
 
     private function fieldStatus(mixed $sourceVal, mixed $targetVal): string
