@@ -56,11 +56,9 @@ class TranslationCheckController extends Controller
                 $translatableFields = $record->translatable ?? [];
                 $title = $record->getTranslation($meta['titleField'], $sourceLang, false) ?: '(ohne Titel)';
 
-                // Fields skipped entirely (complex/nested, not translatable as free text)
+                // Fields skipped entirely (not translatable as free text)
                 $skipFields = [
-                    'details',            // service details JSON
-                    'tags',               // structured tags array
-                    'info',               // structured info JSON
+                    'tags',               // structured tags array (not translatable text)
                 ];
 
                 // Structured JSON fields that are expanded into individual translatable sub-keys.
@@ -175,6 +173,45 @@ class TranslationCheckController extends Controller
                                 $tBlocks = $record->getTranslation($field, $tLocale, false) ?? [];
                                 if (!is_array($tBlocks)) $tBlocks = [];
                                 $allSubTranslations[$tLocale] = (string) (data_get($tBlocks, $dotPath) ?? '');
+                            }
+
+                            $allItems[] = [
+                                'type'         => $type,
+                                'typeLabel'    => $meta['labelDe'],
+                                'id'           => $record->id,
+                                'title'        => $title,
+                                'field'        => $field . '.' . $dotPath,
+                                'fieldLabel'   => $pathLabel,
+                                'source'       => $sourceText,
+                                'target'       => $targetText,
+                                'status'       => $subStatus,
+                                'statusLabel'  => $this->statusLabel($subStatus),
+                                'statusClass'  => $this->statusClass($subStatus),
+                                'translations' => $allSubTranslations,
+                            ];
+                        }
+                        continue; // done with this field
+                    }
+
+                    // Expand mixed JSON fields (info, details) with numeric + associative nesting
+                    if (in_array($field, ['info', 'details'], true)) {
+                        $sourceData = $record->getTranslation($field, $sourceLang, false) ?? [];
+                        $targetData = $record->getTranslation($field, $targetLang, false) ?? [];
+                        if (!is_array($sourceData)) $sourceData = [];
+                        if (!is_array($targetData)) $targetData = [];
+
+                        $paths = $this->extractAllStringPaths($sourceData);
+                        foreach ($paths as [$dotPath, $pathLabel]) {
+                            $sourceText = (string) (data_get($sourceData, $dotPath) ?? '');
+                            $targetText = (string) (data_get($targetData, $dotPath) ?? '');
+                            $subStatus  = $this->fieldStatus($sourceText, $targetText);
+
+                            $allSubTranslations = [];
+                            foreach ($locales as $tLocale) {
+                                if ($tLocale === $sourceLang) continue;
+                                $tData = $record->getTranslation($field, $tLocale, false) ?? [];
+                                if (!is_array($tData)) $tData = [];
+                                $allSubTranslations[$tLocale] = (string) (data_get($tData, $dotPath) ?? '');
                             }
 
                             $allItems[] = [
@@ -358,7 +395,7 @@ class TranslationCheckController extends Controller
 
                     // For JSON fields with nested structure: initialise target from EN source if empty,
                     // so non-text nodes (image URLs, types, numeric values, etc.) are preserved.
-                    if (in_array($parentField, ['description_blocks', 'content_data'], true) && empty($existing)) {
+                    if (in_array($parentField, ['description_blocks', 'content_data', 'info', 'details'], true) && empty($existing)) {
                         $sourceLang = config('app.fallback_locale', 'en');
                         $sourceBlocks = $model->getTranslation($parentField, $sourceLang, false) ?? [];
                         $existing = is_array($sourceBlocks) ? json_decode(json_encode($sourceBlocks), true) : [];
@@ -557,5 +594,50 @@ class TranslationCheckController extends Controller
             'missing'      => 'bg-warning text-dark',
             default        => 'bg-secondary',
         };
+    }
+
+    /**
+     * Recursively extract all non-empty string leaf paths from an arbitrary JSON array,
+     * including numeric-indexed arrays (unlike extractJsonStringPaths which skips them).
+     * Used for fields like `info` (array of objects) and `details` (nested object + array).
+     *
+     * @return array<int, array{0: string, 1: string}>  [dotPath, humanLabel]
+     */
+    private function extractAllStringPaths(array $data, string $prefix = ''): array
+    {
+        $paths = [];
+        foreach ($data as $key => $value) {
+            $dotPath = $prefix === '' ? (string) $key : "{$prefix}.{$key}";
+            if (is_string($value) && $value !== '') {
+                $paths[] = [$dotPath, $this->pathToLabel($dotPath)];
+            } elseif (is_array($value)) {
+                $paths = array_merge($paths, $this->extractAllStringPaths($value, $dotPath));
+            }
+        }
+        return $paths;
+    }
+
+    /**
+     * Convert a dot-notation path to a human-readable German label.
+     * e.g. "0.head" → "Eintrag 1 – Titel", "list.0.description" → "Liste – Eintrag 1 – Beschreibung"
+     */
+    private function pathToLabel(string $dotPath): string
+    {
+        $parts = explode('.', $dotPath);
+        $segments = [];
+        foreach ($parts as $part) {
+            if (is_numeric($part)) {
+                $segments[] = 'Eintrag ' . ((int) $part + 1);
+            } else {
+                $segments[] = match ($part) {
+                    'head'        => 'Titel',
+                    'description' => 'Beschreibung',
+                    'title'       => 'Titel',
+                    'list'        => 'Liste',
+                    default       => ucfirst($part),
+                };
+            }
+        }
+        return implode(' – ', $segments);
     }
 }
