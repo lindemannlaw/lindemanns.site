@@ -97,17 +97,20 @@
                             <svg class="bi sidebar-chevron" width="11" height="11" fill="currentColor" style="transition:transform .2s;flex-shrink:0;"><use xlink:href="/img/icons/bootstrap-icons.svg#chevron-up"/></svg>
                         </div>
                         <div class="collapse show" id="sidebarStatus">
-                            <div class="d-flex flex-column gap-1 px-2 py-2">
+                            <div class="d-flex flex-column px-2 py-2" style="gap:2px;">
                                 @foreach($statusConfig as $key => $cfg)
+                                    @php $active = $statusFilter === $key; @endphp
                                     <a href="{{ route('admin.translations.index', array_merge(request()->only(['type', 'lang', 'id']), ['status' => $key])) }}"
-                                       class="btn btn-sm text-start {{ $statusFilter === $key ? $cfg['active'] : $cfg['inactive'] }}">
-                                        {{ $cfg['label'] }}
+                                       class="d-flex align-items-center gap-2 px-2 py-1 rounded text-decoration-none small {{ $active ? 'fw-semibold' : 'text-body' }}"
+                                       style="{{ $active ? 'background:rgba(0,0,0,.06);' : '' }}">
+                                        <svg class="bi flex-shrink-0 {{ $active ? ($cfg['badgeText'] ?? 'text-body') : 'invisible' }}"
+                                             width="13" height="13" fill="currentColor">
+                                            <use xlink:href="/img/icons/bootstrap-icons.svg#check2"/>
+                                        </svg>
+                                        <span class="flex-grow-1">{{ $cfg['label'] }}</span>
                                         @if($key !== 'all' && isset($counts[$key]))
-                                            @if($counts[$key] === 0)
-                                                <span class="ms-1 {{ $cfg['badgeText'] ?? '' }}" style="font-size:.75em;font-weight:600;">0</span>
-                                            @else
-                                                <span class="badge {{ $cfg['badge'] ?? 'bg-secondary' }} ms-1">{{ $counts[$key] }}</span>
-                                            @endif
+                                            <span class="badge {{ $active ? ($cfg['badge'] ?? 'bg-secondary') : 'bg-secondary bg-opacity-50 text-body' }} ms-auto"
+                                                  style="font-size:.7em;">{{ $counts[$key] }}</span>
                                         @endif
                                     </a>
                                 @endforeach
