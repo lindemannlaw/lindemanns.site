@@ -10,7 +10,7 @@
         </a>
         <button type="button" class="btn btn-sm btn-outline-primary me-2" id="btnGenerate">
             <svg class="bi" width="16" height="16" fill="currentColor"><use xlink:href="/img/icons/bootstrap-icons.svg#stars"/></svg>
-            Alle Felder neu generieren (EN)
+            Alle Felder neu generieren
         </button>
     </x-admin.main-panel>
 @endsection
@@ -282,33 +282,65 @@ document.addEventListener('DOMContentLoaded', function () {
     document.getElementById('btnGenerate')?.addEventListener('click', async () => {
         const btn = document.getElementById('btnGenerate');
         btn.disabled = true;
-        btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Generiere...';
+
+        const allFields = ['seo_title', 'seo_description', 'seo_keywords', 'geo_text'];
+        let step = 0;
+        const updateLabel = (msg) => {
+            btn.innerHTML = `<span class="spinner-border spinner-border-sm"></span> ${msg}`;
+        };
 
         try {
-            const res = await fetch(GENERATE_URL, {
+            // Step 1: Generate EN via AI
+            updateLabel('Generiere EN…');
+            const genRes = await fetch(GENERATE_URL, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': CSRF },
                 body: JSON.stringify({ type: TYPE, id: ID, locale: 'en' }),
             });
-            const data = await res.json();
-            if (data.error) throw new Error(data.error);
+            const genData = await genRes.json();
+            if (genData.error) throw new Error(genData.error);
 
-            // Fill only EN inputs, mark dirty so user can save/translate
-            ['seo_title', 'seo_description', 'seo_keywords', 'geo_text'].forEach(field => {
-                if (data[field] === undefined) return;
-                const el = document.querySelector(`.seo-field-input[data-field="${field}"][data-locale="en"]`);
-                if (el) {
-                    el.value = data[field];
-                    el.dispatchEvent(new Event('input'));
+            // Step 2: Save each field with translate=true (EN + all locales via DeepL)
+            for (const field of allFields) {
+                const value = genData[field];
+                if (!value) continue;
+
+                step++;
+                updateLabel(`Übersetze Feld ${step}/${allFields.length}…`);
+
+                const saveRes = await fetch(SAVE_FIELD_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': CSRF },
+                    body: JSON.stringify({ type: TYPE, id: ID, field, locale: 'en', value, translate: true }),
+                });
+                const saveData = await saveRes.json();
+                if (saveData.error) throw new Error(saveData.error);
+
+                // Update all locale inputs for this field
+                const translations = saveData.translations || {};
+                Object.entries(translations).forEach(([loc, val]) => {
+                    const input = document.querySelector(`.seo-field-input[data-field="${field}"][data-locale="${loc}"]`);
+                    if (input) {
+                        input.value = val;
+                        if (input.tagName === 'TEXTAREA') autoResize(input);
+                        const rowCounter = document.querySelector(`.counter-input[data-field="${field}"][data-locale="${loc}"]`);
+                        if (rowCounter) rowCounter.textContent = val.length;
+                    }
+                    markClean(field, loc, val);
+                });
+
+                if (translations['en']) {
+                    const headerCounter = document.getElementById(`counter-${field}-en`);
+                    if (headerCounter) headerCounter.textContent = translations['en'].length;
                 }
-            });
+            }
 
-            showToast('EN-Vorschläge generiert — bitte speichern oder Block-Regenerierung nutzen.', 'bg-info');
+            showToast('Alle Felder generiert und in alle Sprachen übersetzt!', 'bg-success');
         } catch (err) {
             showToast('Fehler: ' + err.message, 'bg-danger');
         } finally {
             btn.disabled = false;
-            btn.innerHTML = '<svg class="bi" width="16" height="16" fill="currentColor"><use xlink:href="/img/icons/bootstrap-icons.svg#stars"/></svg> Alle Felder neu generieren (EN)';
+            btn.innerHTML = '<svg class="bi" width="16" height="16" fill="currentColor"><use xlink:href="/img/icons/bootstrap-icons.svg#stars"/></svg> Alle Felder neu generieren';
         }
     });
 
