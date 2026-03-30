@@ -14,15 +14,6 @@
             <svg class="bi" width="13" height="13" fill="currentColor"><use xlink:href="/img/icons/bootstrap-icons.svg#stars"/></svg>
             SEO / GEO
         </a>
-        <x-admin.button
-            data-generate-seo
-            data-generate-seo-url="{{ route('admin.generate-seo') }}"
-            data-update-timestamps-url="{{ route('admin.portfolio.project.update-timestamps', $project) }}"
-            data-text-timestamps="{{ json_encode($project->text_timestamps ?? [], JSON_UNESCAPED_UNICODE) }}"
-            :btn="'btn-outline-success btn-sm'"
-            :iconName="'stars'"
-            :title="'SEO generieren'"
-        />
         <a href="{{ route('admin.translations.index', ['type' => 'project', 'id' => $project->id]) }}"
            target="_blank"
            class="btn btn-dark btn-sm d-inline-flex align-items-center gap-1"

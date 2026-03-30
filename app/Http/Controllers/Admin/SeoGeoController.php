@@ -26,8 +26,9 @@ class SeoGeoController extends Controller
         $seoFields = TranslatableModelRegistry::SEO_FIELDS;
         $totalSlots = count($seoFields) * count($locales);
 
-        $typeFilter = $request->get('type', 'all');
+        $typeFilter   = $request->get('type', 'all');
         $statusFilter = $request->get('status', 'all');
+        $idFilter     = $request->get('id', null);
 
         $allItems = $this->registry->allSeoItems();
 
@@ -61,6 +62,9 @@ class SeoGeoController extends Controller
         if ($typeFilter !== 'all') {
             $items = array_filter($items, fn ($i) => $i['type'] === $typeFilter);
         }
+        if ($idFilter) {
+            $items = array_filter($items, fn ($i) => $i['id'] == $idFilter);
+        }
         if ($statusFilter !== 'all') {
             $items = array_filter($items, fn ($i) => $i['status'] === $statusFilter);
         }
@@ -73,15 +77,25 @@ class SeoGeoController extends Controller
         // Available types for filter dropdown
         $types = collect($allItems)->pluck('type')->unique()->values()->all();
 
+        $navPages = \App\Models\Page::whereIn('slug', [
+            'about', 'services', 'portfolio', 'news', 'contacts', 'imprint', 'privacy-notice', 'terms-of-use',
+        ])->pluck('id', 'slug')->all();
+
+        $navSections = \App\Models\SiteSection::whereIn('slug', ['who-we-are', 'contact-us'])
+            ->pluck('id', 'slug')->all();
+
         return view('admin.seo-geo.index', [
             'items'        => array_values($items),
             'types'        => $types,
             'typeFilter'   => $typeFilter,
+            'idFilter'     => $idFilter,
             'statusFilter' => $statusFilter,
             'complete'     => $complete,
             'partial'      => $partial,
             'empty'        => $empty,
             'total'        => count($allItems),
+            'navPages'     => $navPages,
+            'navSections'  => $navSections,
         ]);
     }
 

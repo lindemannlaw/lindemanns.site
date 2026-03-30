@@ -17,169 +17,183 @@
 
 @section('content')
     <x-admin.container>
+        <div class="row g-4">
 
-        {{-- Filters --}}
-        <form method="GET" action="{{ route('admin.translations.index') }}" class="d-flex gap-3 mb-4 flex-wrap align-items-center">
-            {{-- Type filter --}}
-            <select name="type" class="form-select form-select-sm" style="width: auto;" onchange="this.form.submit()">
-                <option value="all" {{ $typeFilter === 'all' ? 'selected' : '' }}>Alle Typen</option>
-                @foreach($types as $t)
-                    <option value="{{ $t['key'] }}" {{ $typeFilter === $t['key'] ? 'selected' : '' }}>{{ $t['label'] }}</option>
-                @endforeach
-            </select>
+            {{-- Sidebar nav --}}
+            <div class="col-md-3 col-xl-2">
+                @include('admin.partials.content-nav', [
+                    'dashboard'   => 'translations',
+                    'typeFilter'  => $typeFilter,
+                    'idFilter'    => $idFilter,
+                    'navPages'    => $navPages,
+                    'navSections' => $navSections,
+                    'extraParams' => ['lang' => $targetLang, 'status' => $statusFilter],
+                ])
+            </div>
 
-            {{-- Record sub-filter (only when a specific type is selected) --}}
-            @if($typeFilter !== 'all' && count($typeRecords) > 0)
-                <select name="id" class="form-select form-select-sm" style="width: auto; max-width: 220px;" onchange="this.form.submit()">
-                    <option value="">— Alle {{ collect($types)->firstWhere('key', $typeFilter)['label'] ?? '' }} —</option>
-                    @foreach($typeRecords as $rec)
-                        <option value="{{ $rec['id'] }}" {{ (string)$idFilter === (string)$rec['id'] ? 'selected' : '' }}>
-                            {{ \Illuminate\Support\Str::limit($rec['title'], 35) }}
-                        </option>
-                    @endforeach
-                </select>
-            @endif
+            {{-- Main content --}}
+            <div class="col-md-9 col-xl-10">
 
-            {{-- Target language --}}
-            @php
-                $localeFlags = [
-                    'de' => '🇩🇪', 'fr' => '🇫🇷', 'pl' => '🇵🇱', 'el' => '🇬🇷',
-                    'ru' => '🇷🇺', 'ar' => '🇸🇦', 'zh' => '🇨🇳', 'en' => '🇬🇧',
-                    'es' => '🇪🇸', 'it' => '🇮🇹', 'pt' => '🇵🇹', 'ja' => '🇯🇵',
-                    'ko' => '🇰🇷', 'nl' => '🇳🇱', 'tr' => '🇹🇷',
-                ];
-            @endphp
-            <div class="dropdown">
-                <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button"
-                        data-bs-toggle="dropdown" data-bs-auto-close="outside" id="langDropdownBtn">
-                    {{ $localeFlags[$targetLang] ?? '' }} {{ strtoupper($targetLang) }}
-                    @if(isset($langSettings[$targetLang]))
-                        <span class="badge ms-1 {{ $langSettings[$targetLang] ? 'bg-success' : 'bg-secondary' }}" style="font-size:.65em;">
-                            {{ $langSettings[$targetLang] ? 'Live' : 'Draft' }}
-                        </span>
+                {{-- Filters row --}}
+                <div class="d-flex gap-3 mb-4 flex-wrap align-items-center">
+
+                    {{-- Record sub-filter (only when a specific type is selected) --}}
+                    @if($typeFilter !== 'all' && count($typeRecords) > 0)
+                        <form method="GET" action="{{ route('admin.translations.index') }}" class="d-flex gap-2 align-items-center">
+                            <input type="hidden" name="type" value="{{ $typeFilter }}">
+                            <input type="hidden" name="lang" value="{{ $targetLang }}">
+                            <input type="hidden" name="status" value="{{ $statusFilter }}">
+                            <select name="id" class="form-select form-select-sm" style="width: auto; max-width: 240px;" onchange="this.form.submit()">
+                                <option value="">— Alle {{ collect($types)->firstWhere('key', $typeFilter)['label'] ?? '' }} —</option>
+                                @foreach($typeRecords as $rec)
+                                    <option value="{{ $rec['id'] }}" {{ (string)$idFilter === (string)$rec['id'] ? 'selected' : '' }}>
+                                        {{ \Illuminate\Support\Str::limit($rec['title'], 35) }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </form>
                     @endif
-                    <span id="extraLangsIndicator" class="badge bg-primary ms-1" style="display:none; font-size:.65em;"></span>
-                </button>
-                <ul class="dropdown-menu pt-1 pb-1" style="min-width: 210px;">
-                    {{-- Select all / none --}}
-                    <li class="d-flex justify-content-between align-items-center px-3 py-1">
-                        <small class="text-muted">Für DeepL:</small>
-                        <div class="d-flex gap-2">
-                            <a href="#" class="small text-primary text-decoration-none" id="selectAllLangs">Alle</a>
-                            <span class="text-muted small">/</span>
-                            <a href="#" class="small text-secondary text-decoration-none" id="deselectAllLangs">Keine</a>
-                        </div>
-                    </li>
-                    <li><hr class="dropdown-divider my-1"></li>
-                    @foreach($locales as $locale)
-                        @if($locale !== $sourceLang)
-                            @php $isPublished = $langSettings[$locale] ?? true; @endphp
-                            <li class="d-flex align-items-center px-2 py-1 gap-2 {{ $targetLang === $locale ? 'bg-light rounded mx-1' : '' }}">
-                                <input type="checkbox"
-                                       class="form-check-input flex-shrink-0 lang-translate-check"
-                                       id="lang-check-{{ $locale }}"
-                                       data-locale="{{ $locale }}"
-                                       style="cursor:pointer; margin-top:0;"
-                                       {{ $targetLang === $locale ? 'checked' : '' }}>
-                                <a class="dropdown-item flex-grow-1 py-0 px-1 {{ $targetLang === $locale ? 'fw-semibold' : '' }}"
-                                   href="{{ route('admin.translations.index', array_merge(request()->only(['type', 'status', 'id']), ['lang' => $locale])) }}">
-                                    {{ $localeFlags[$locale] ?? '' }} {{ strtoupper($locale) }}
-                                </a>
-                                <button type="button"
-                                    class="btn btn-sm p-0 border-0 bg-transparent lang-publish-toggle flex-shrink-0"
-                                    data-locale="{{ $locale }}"
-                                    data-published="{{ $isPublished ? '1' : '0' }}"
-                                    title="{{ $isPublished ? 'Live – klicken für Draft' : 'Draft – klicken für Live' }}">
-                                    <span class="badge {{ $isPublished ? 'bg-success' : 'bg-secondary' }}" style="font-size:.7em; cursor:pointer;">
-                                        {{ $isPublished ? 'Live' : 'Draft' }}
-                                    </span>
-                                </button>
-                            </li>
-                        @endif
-                    @endforeach
-                </ul>
-            </div>
-            <input type="hidden" name="lang" value="{{ $targetLang }}">
 
-            {{-- Status filter --}}
-            @php
-            $statusConfig = [
-                'all'          => ['label' => 'Alle',             'active' => 'btn-primary',   'inactive' => 'btn-outline-secondary', 'badge' => 'bg-secondary',         'badgeText' => 'text-secondary'],
-                'untranslated' => ['label' => 'Nicht übersetzt',  'active' => 'btn-danger',    'inactive' => 'btn-outline-secondary', 'badge' => 'bg-danger',            'badgeText' => 'text-danger'],
-                'inherited'    => ['label' => 'Geerbt',           'active' => 'btn-secondary', 'inactive' => 'btn-outline-secondary', 'badge' => 'bg-secondary',         'badgeText' => 'text-secondary'],
-                'ok'           => ['label' => 'OK',               'active' => 'btn-success',   'inactive' => 'btn-outline-secondary', 'badge' => 'bg-success',           'badgeText' => 'text-success'],
-                'missing'      => ['label' => 'Fehlend',          'active' => 'btn-warning',   'inactive' => 'btn-outline-secondary', 'badge' => 'bg-warning text-dark', 'badgeText' => 'text-warning'],
-            ];
-            @endphp
-            <div class="btn-group btn-group-sm">
-                @foreach($statusConfig as $key => $cfg)
-                    <a href="{{ route('admin.translations.index', array_merge(request()->only(['type', 'lang', 'id']), ['status' => $key])) }}"
-                       class="btn {{ $statusFilter === $key ? $cfg['active'] : $cfg['inactive'] }}">
-                        {{ $cfg['label'] }}
-                        @if($key !== 'all' && isset($counts[$key]))
-                            @if($counts[$key] === 0)
-                                <span class="ms-1 {{ $cfg['badgeText'] }}" style="font-size:.75em; font-weight:600;">0</span>
-                            @else
-                                <span class="badge {{ $cfg['badge'] }} ms-1">{{ $counts[$key] }}</span>
+                    {{-- Target language --}}
+                    @php
+                        $localeFlags = [
+                            'de' => '🇩🇪', 'fr' => '🇫🇷', 'pl' => '🇵🇱', 'el' => '🇬🇷',
+                            'ru' => '🇷🇺', 'ar' => '🇸🇦', 'zh' => '🇨🇳', 'en' => '🇬🇧',
+                            'es' => '🇪🇸', 'it' => '🇮🇹', 'pt' => '🇵🇹', 'ja' => '🇯🇵',
+                            'ko' => '🇰🇷', 'nl' => '🇳🇱', 'tr' => '🇹🇷',
+                        ];
+                    @endphp
+                    <div class="dropdown">
+                        <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button"
+                                data-bs-toggle="dropdown" data-bs-auto-close="outside" id="langDropdownBtn">
+                            {{ $localeFlags[$targetLang] ?? '' }} {{ strtoupper($targetLang) }}
+                            @if(isset($langSettings[$targetLang]))
+                                <span class="badge ms-1 {{ $langSettings[$targetLang] ? 'bg-success' : 'bg-secondary' }}" style="font-size:.65em;">
+                                    {{ $langSettings[$targetLang] ? 'Live' : 'Draft' }}
+                                </span>
                             @endif
-                        @endif
-                    </a>
-                @endforeach
-            </div>
-
-            <input type="hidden" name="status" value="{{ $statusFilter }}">
-        </form>
-
-        {{-- Select all --}}
-        <div class="mb-3">
-            <div class="form-check">
-                <input class="form-check-input" type="checkbox" id="selectAll">
-                <label class="form-check-label small" for="selectAll">Alle auswählen</label>
-            </div>
-        </div>
-
-        {{-- Items --}}
-        <div id="translationItems">
-            @forelse($items as $i => $item)
-                <div class="card mb-3 translation-item" data-index="{{ $i }}" data-type="{{ $item['type'] }}" data-id="{{ $item['id'] }}" data-field="{{ $item['field'] }}">
-                    <div class="card-body py-3">
-                        <div class="d-flex align-items-start gap-3">
-                            <div class="pt-1">
-                                <input class="form-check-input item-checkbox" type="checkbox" data-index="{{ $i }}">
-                            </div>
-                            <div class="flex-grow-1">
-                                <div class="d-flex align-items-center gap-2 mb-2">
-                                    <span class="badge {{ $item['statusClass'] }}">{{ $item['statusLabel'] }}</span>
-                                    <span class="badge bg-secondary bg-opacity-25 text-body">{{ $item['typeLabel'] }}</span>
-                                    <span class="small fw-semibold">{{ $item['title'] }}</span>
-                                    <span class="small text-muted">&middot; {{ $item['fieldLabel'] }}</span>
+                            <span id="extraLangsIndicator" class="badge bg-primary ms-1" style="display:none; font-size:.65em;"></span>
+                        </button>
+                        <ul class="dropdown-menu pt-1 pb-1" style="min-width: 210px;">
+                            {{-- Select all / none --}}
+                            <li class="d-flex justify-content-between align-items-center px-3 py-1">
+                                <small class="text-muted">Für DeepL:</small>
+                                <div class="d-flex gap-2">
+                                    <a href="#" class="small text-primary text-decoration-none" id="selectAllLangs">Alle</a>
+                                    <span class="text-muted small">/</span>
+                                    <a href="#" class="small text-secondary text-decoration-none" id="deselectAllLangs">Keine</a>
                                 </div>
+                            </li>
+                            <li><hr class="dropdown-divider my-1"></li>
+                            @foreach($locales as $locale)
+                                @if($locale !== $sourceLang)
+                                    @php $isPublished = $langSettings[$locale] ?? true; @endphp
+                                    <li class="d-flex align-items-center px-2 py-1 gap-2 {{ $targetLang === $locale ? 'bg-light rounded mx-1' : '' }}">
+                                        <input type="checkbox"
+                                               class="form-check-input flex-shrink-0 lang-translate-check"
+                                               id="lang-check-{{ $locale }}"
+                                               data-locale="{{ $locale }}"
+                                               style="cursor:pointer; margin-top:0;"
+                                               {{ $targetLang === $locale ? 'checked' : '' }}>
+                                        <a class="dropdown-item flex-grow-1 py-0 px-1 {{ $targetLang === $locale ? 'fw-semibold' : '' }}"
+                                           href="{{ route('admin.translations.index', array_merge(request()->only(['type', 'status', 'id']), ['lang' => $locale])) }}">
+                                            {{ $localeFlags[$locale] ?? '' }} {{ strtoupper($locale) }}
+                                        </a>
+                                        <button type="button"
+                                            class="btn btn-sm p-0 border-0 bg-transparent lang-publish-toggle flex-shrink-0"
+                                            data-locale="{{ $locale }}"
+                                            data-published="{{ $isPublished ? '1' : '0' }}"
+                                            title="{{ $isPublished ? 'Live – klicken für Draft' : 'Draft – klicken für Live' }}">
+                                            <span class="badge {{ $isPublished ? 'bg-success' : 'bg-secondary' }}" style="font-size:.7em; cursor:pointer;">
+                                                {{ $isPublished ? 'Live' : 'Draft' }}
+                                            </span>
+                                        </button>
+                                    </li>
+                                @endif
+                            @endforeach
+                        </ul>
+                    </div>
+                    <input type="hidden" name="lang" value="{{ $targetLang }}">
 
-                                <div class="row g-2 translation-row">
-                                    {{-- Source --}}
-                                    <div class="col-source" data-index="{{ $i }}">
-                                        <label class="form-label small text-muted">
-                                            <span class="badge bg-light text-dark border">{{ strtoupper($sourceLang) }}</span>
-                                            Quelltext
-                                            <button type="button" class="btn btn-sm btn-link p-0 ms-2 btn-save-source" data-index="{{ $i }}" title="Quelltext speichern" style="display:none;">
-                                                <svg class="bi" width="14" height="14" fill="currentColor"><use xlink:href="/img/icons/bootstrap-icons.svg#floppy"/></svg>
-                                            </button>
-                                        </label>
-                                        <textarea class="form-control form-control-sm source-input" data-index="{{ $i }}" style="overflow:hidden; background: var(--bs-light);">{{ $item['source'] }}</textarea>
-                                    </div>
-                                    {{-- Translation columns inserted dynamically by JS --}}
-                                </div>
-                            </div>
-                        </div>
+                    {{-- Status filter --}}
+                    @php
+                    $statusConfig = [
+                        'all'          => ['label' => 'Alle',             'active' => 'btn-primary',   'inactive' => 'btn-outline-secondary', 'badge' => 'bg-secondary',         'badgeText' => 'text-secondary'],
+                        'untranslated' => ['label' => 'Nicht übersetzt',  'active' => 'btn-danger',    'inactive' => 'btn-outline-secondary', 'badge' => 'bg-danger',            'badgeText' => 'text-danger'],
+                        'inherited'    => ['label' => 'Geerbt',           'active' => 'btn-secondary', 'inactive' => 'btn-outline-secondary', 'badge' => 'bg-secondary',         'badgeText' => 'text-secondary'],
+                        'ok'           => ['label' => 'OK',               'active' => 'btn-success',   'inactive' => 'btn-outline-secondary', 'badge' => 'bg-success',           'badgeText' => 'text-success'],
+                        'missing'      => ['label' => 'Fehlend',          'active' => 'btn-warning',   'inactive' => 'btn-outline-secondary', 'badge' => 'bg-warning text-dark', 'badgeText' => 'text-warning'],
+                    ];
+                    @endphp
+                    <div class="btn-group btn-group-sm">
+                        @foreach($statusConfig as $key => $cfg)
+                            <a href="{{ route('admin.translations.index', array_merge(request()->only(['type', 'lang', 'id']), ['status' => $key])) }}"
+                               class="btn {{ $statusFilter === $key ? $cfg['active'] : $cfg['inactive'] }}">
+                                {{ $cfg['label'] }}
+                                @if($key !== 'all' && isset($counts[$key]))
+                                    @if($counts[$key] === 0)
+                                        <span class="ms-1 {{ $cfg['badgeText'] }}" style="font-size:.75em; font-weight:600;">0</span>
+                                    @else
+                                        <span class="badge {{ $cfg['badge'] }} ms-1">{{ $counts[$key] }}</span>
+                                    @endif
+                                @endif
+                            </a>
+                        @endforeach
                     </div>
                 </div>
-            @empty
-                <div class="text-center text-muted py-5">
-                    Keine Einträge für den gewählten Filter.
-                </div>
-            @endforelse
-        </div>
 
+                {{-- Select all --}}
+                <div class="mb-3">
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="selectAll">
+                        <label class="form-check-label small" for="selectAll">Alle auswählen</label>
+                    </div>
+                </div>
+
+                {{-- Items --}}
+                <div id="translationItems">
+                    @forelse($items as $i => $item)
+                        <div class="card mb-3 translation-item" data-index="{{ $i }}" data-type="{{ $item['type'] }}" data-id="{{ $item['id'] }}" data-field="{{ $item['field'] }}">
+                            <div class="card-body py-3">
+                                <div class="d-flex align-items-start gap-3">
+                                    <div class="pt-1">
+                                        <input class="form-check-input item-checkbox" type="checkbox" data-index="{{ $i }}">
+                                    </div>
+                                    <div class="flex-grow-1">
+                                        <div class="d-flex align-items-center gap-2 mb-2">
+                                            <span class="badge {{ $item['statusClass'] }}">{{ $item['statusLabel'] }}</span>
+                                            <span class="badge bg-secondary bg-opacity-25 text-body">{{ $item['typeLabel'] }}</span>
+                                            <span class="small fw-semibold">{{ $item['title'] }}</span>
+                                            <span class="small text-muted">&middot; {{ $item['fieldLabel'] }}</span>
+                                        </div>
+
+                                        <div class="row g-2 translation-row">
+                                            {{-- Source --}}
+                                            <div class="col-source" data-index="{{ $i }}">
+                                                <label class="form-label small text-muted">
+                                                    <span class="badge bg-light text-dark border">{{ strtoupper($sourceLang) }}</span>
+                                                    Quelltext
+                                                    <button type="button" class="btn btn-sm btn-link p-0 ms-2 btn-save-source" data-index="{{ $i }}" title="Quelltext speichern" style="display:none;">
+                                                        <svg class="bi" width="14" height="14" fill="currentColor"><use xlink:href="/img/icons/bootstrap-icons.svg#floppy"/></svg>
+                                                    </button>
+                                                </label>
+                                                <textarea class="form-control form-control-sm source-input" data-index="{{ $i }}" style="overflow:hidden; background: var(--bs-light);">{{ $item['source'] }}</textarea>
+                                            </div>
+                                            {{-- Translation columns inserted dynamically by JS --}}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    @empty
+                        <div class="text-center text-muted py-5">
+                            Keine Einträge für den gewählten Filter.
+                        </div>
+                    @endforelse
+                </div>
+
+            </div>{{-- /col --}}
+        </div>{{-- /row --}}
     </x-admin.container>
 @endsection
 
