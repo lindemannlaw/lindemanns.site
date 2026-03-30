@@ -18,6 +18,7 @@ import { datepicker} from "./components/datepicker.js";
 import { select } from "./components/select.js";
 import { projectDescriptionBlocks } from "./components/projectDescriptionBlocks.js";
 import { translateBlocks } from "./components/translateBlocks.js";
+import { autoTranslateOverlay } from "./components/autoTranslateOverlay.js";
 
 import { saveAndShowActiveTab } from "./saveAndShowActiveTab.js";
 
@@ -39,6 +40,7 @@ datepicker();
 select();
 projectDescriptionBlocks();
 translateBlocks();
+autoTranslateOverlay();
 
 saveAndShowActiveTab();
 
