@@ -155,6 +155,56 @@ class SeoGeoController extends Controller
         return response()->json($result);
     }
 
+    public function saveField(Request $request): JsonResponse
+    {
+        $request->validate([
+            'type'      => 'required|string',
+            'id'        => 'required|integer',
+            'field'     => ['required', 'string', \Illuminate\Validation\Rule::in(TranslatableModelRegistry::SEO_FIELDS)],
+            'locale'    => 'required|string|max:5',
+            'value'     => 'nullable|string',
+            'translate' => 'sometimes|boolean',
+        ]);
+
+        $model = $this->registry->resolveModel($request->type, $request->id);
+        if (!$model) return response()->json(['error' => 'Not found'], 404);
+
+        $field     = $request->field;
+        $locale    = $request->locale;
+        $value     = $request->value ?? '';
+        $translate = (bool) $request->input('translate', false);
+
+        try {
+            DB::beginTransaction();
+
+            $model->setTranslation($field, $locale, $value);
+            $translations = [$locale => $value];
+
+            if ($translate && $this->deepl->isConfigured() && filled($value)) {
+                $allLocales   = supported_languages_keys();
+                $otherLocales = array_values(array_filter($allLocales, fn($l) => $l !== $locale));
+                $items = [['text' => $value, 'isHtml' => false]];
+
+                foreach ($otherLocales as $targetLang) {
+                    $translated = $this->deepl->translate($items, strtoupper($locale), strtoupper($targetLang));
+                    $translatedValue = $translated[0] ?? $value;
+                    $model->setTranslation($field, $targetLang, $translatedValue);
+                    $translations[$targetLang] = $translatedValue;
+                }
+            }
+
+            $model->save();
+            DB::commit();
+
+            return response()->json(['success' => true, 'translations' => $translations]);
+
+        } catch (\Throwable $e) {
+            DB::rollBack();
+            Log::error('[SeoGeo] saveField failed', ['message' => $e->getMessage()]);
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
+    }
+
     public function apply(Request $request): JsonResponse
     {
         $request->validate([

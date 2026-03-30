@@ -228,6 +228,7 @@ Route::group([
         Route::get('/{type}/{id}', [\App\Http\Controllers\Admin\SeoGeoController::class, 'show'])->name('admin.seo-geo.show');
         Route::post('/generate', [\App\Http\Controllers\Admin\SeoGeoController::class, 'generate'])->name('admin.seo-geo.generate');
         Route::post('/apply', [\App\Http\Controllers\Admin\SeoGeoController::class, 'apply'])->name('admin.seo-geo.apply');
+        Route::post('/save-field', [\App\Http\Controllers\Admin\SeoGeoController::class, 'saveField'])->name('admin.seo-geo.save-field');
     });
 
     /* TRANSLATION CHECK */
