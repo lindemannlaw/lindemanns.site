@@ -50,25 +50,43 @@
                 ];
             @endphp
             <div class="dropdown">
-                <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button"
+                        data-bs-toggle="dropdown" data-bs-auto-close="outside" id="langDropdownBtn">
                     {{ $localeFlags[$targetLang] ?? '' }} {{ strtoupper($targetLang) }}
                     @if(isset($langSettings[$targetLang]))
                         <span class="badge ms-1 {{ $langSettings[$targetLang] ? 'bg-success' : 'bg-secondary' }}" style="font-size:.65em;">
                             {{ $langSettings[$targetLang] ? 'Live' : 'Draft' }}
                         </span>
                     @endif
+                    <span id="extraLangsIndicator" class="badge bg-primary ms-1" style="display:none; font-size:.65em;"></span>
                 </button>
-                <ul class="dropdown-menu" style="min-width: 180px;">
+                <ul class="dropdown-menu pt-1 pb-1" style="min-width: 210px;">
+                    {{-- Select all / none --}}
+                    <li class="d-flex justify-content-between align-items-center px-3 py-1">
+                        <small class="text-muted">Für DeepL:</small>
+                        <div class="d-flex gap-2">
+                            <a href="#" class="small text-primary text-decoration-none" id="selectAllLangs">Alle</a>
+                            <span class="text-muted small">/</span>
+                            <a href="#" class="small text-secondary text-decoration-none" id="deselectAllLangs">Keine</a>
+                        </div>
+                    </li>
+                    <li><hr class="dropdown-divider my-1"></li>
                     @foreach($locales as $locale)
                         @if($locale !== $sourceLang)
                             @php $isPublished = $langSettings[$locale] ?? true; @endphp
-                            <li class="d-flex align-items-center px-2 py-1 gap-2 {{ $targetLang === $locale ? 'bg-light' : '' }}">
+                            <li class="d-flex align-items-center px-2 py-1 gap-2 {{ $targetLang === $locale ? 'bg-light rounded mx-1' : '' }}">
+                                <input type="checkbox"
+                                       class="form-check-input flex-shrink-0 lang-translate-check"
+                                       id="lang-check-{{ $locale }}"
+                                       data-locale="{{ $locale }}"
+                                       style="cursor:pointer; margin-top:0;"
+                                       {{ $targetLang === $locale ? 'checked' : '' }}>
                                 <a class="dropdown-item flex-grow-1 py-0 px-1 {{ $targetLang === $locale ? 'fw-semibold' : '' }}"
                                    href="{{ route('admin.translations.index', array_merge(request()->only(['type', 'status', 'id']), ['lang' => $locale])) }}">
                                     {{ $localeFlags[$locale] ?? '' }} {{ strtoupper($locale) }}
                                 </a>
                                 <button type="button"
-                                    class="btn btn-sm p-0 border-0 bg-transparent lang-publish-toggle"
+                                    class="btn btn-sm p-0 border-0 bg-transparent lang-publish-toggle flex-shrink-0"
                                     data-locale="{{ $locale }}"
                                     data-published="{{ $isPublished ? '1' : '0' }}"
                                     title="{{ $isPublished ? 'Live – klicken für Draft' : 'Draft – klicken für Live' }}">
@@ -86,11 +104,11 @@
             {{-- Status filter --}}
             @php
             $statusConfig = [
-                'all'          => ['label' => 'Alle',             'active' => 'btn-primary',   'inactive' => 'btn-outline-secondary', 'badge' => 'bg-secondary'],
-                'untranslated' => ['label' => 'Nicht übersetzt',  'active' => 'btn-danger',    'inactive' => 'btn-outline-secondary', 'badge' => 'bg-danger'],
-                'inherited'    => ['label' => 'Geerbt',           'active' => 'btn-secondary', 'inactive' => 'btn-outline-secondary', 'badge' => 'bg-secondary'],
-                'ok'           => ['label' => 'OK',               'active' => 'btn-success',   'inactive' => 'btn-outline-secondary', 'badge' => 'bg-success'],
-                'missing'      => ['label' => 'Fehlend',          'active' => 'btn-warning',   'inactive' => 'btn-outline-secondary', 'badge' => 'bg-warning text-dark'],
+                'all'          => ['label' => 'Alle',             'active' => 'btn-primary',   'inactive' => 'btn-outline-secondary', 'badge' => 'bg-secondary',         'badgeText' => 'text-secondary'],
+                'untranslated' => ['label' => 'Nicht übersetzt',  'active' => 'btn-danger',    'inactive' => 'btn-outline-secondary', 'badge' => 'bg-danger',            'badgeText' => 'text-danger'],
+                'inherited'    => ['label' => 'Geerbt',           'active' => 'btn-secondary', 'inactive' => 'btn-outline-secondary', 'badge' => 'bg-secondary',         'badgeText' => 'text-secondary'],
+                'ok'           => ['label' => 'OK',               'active' => 'btn-success',   'inactive' => 'btn-outline-secondary', 'badge' => 'bg-success',           'badgeText' => 'text-success'],
+                'missing'      => ['label' => 'Fehlend',          'active' => 'btn-warning',   'inactive' => 'btn-outline-secondary', 'badge' => 'bg-warning text-dark', 'badgeText' => 'text-warning'],
             ];
             @endphp
             <div class="btn-group btn-group-sm">
@@ -99,7 +117,11 @@
                        class="btn {{ $statusFilter === $key ? $cfg['active'] : $cfg['inactive'] }}">
                         {{ $cfg['label'] }}
                         @if($key !== 'all' && isset($counts[$key]))
-                            <span class="badge {{ $cfg['badge'] }} ms-1">{{ $counts[$key] }}</span>
+                            @if($counts[$key] === 0)
+                                <span class="ms-1 {{ $cfg['badgeText'] }}" style="font-size:.75em; font-weight:600;">0</span>
+                            @else
+                                <span class="badge {{ $cfg['badge'] }} ms-1">{{ $counts[$key] }}</span>
+                            @endif
                         @endif
                     </a>
                 @endforeach
@@ -288,45 +310,101 @@ document.addEventListener('DOMContentLoaded', function () {
         document.getElementById('btnApplyAll').disabled = count === 0;
     }
 
-    // Translate selected
+    // Language checkbox multi-select: Alle / Keine
+    document.getElementById('selectAllLangs')?.addEventListener('click', (e) => {
+        e.preventDefault();
+        document.querySelectorAll('.lang-translate-check').forEach(cb => cb.checked = true);
+        updateExtraLangsIndicator();
+    });
+    document.getElementById('deselectAllLangs')?.addEventListener('click', (e) => {
+        e.preventDefault();
+        document.querySelectorAll('.lang-translate-check').forEach(cb => cb.checked = false);
+        updateExtraLangsIndicator();
+    });
+    document.querySelectorAll('.lang-translate-check').forEach(cb => {
+        cb.addEventListener('change', updateExtraLangsIndicator);
+    });
+    function updateExtraLangsIndicator() {
+        const extra = Array.from(document.querySelectorAll('.lang-translate-check:checked'))
+            .filter(cb => cb.dataset.locale !== TARGET_LANG);
+        const indicator = document.getElementById('extraLangsIndicator');
+        if (extra.length > 0) {
+            indicator.textContent = '+' + extra.length;
+            indicator.style.display = '';
+        } else {
+            indicator.style.display = 'none';
+        }
+    }
+
+    // Translate selected — supports multiple target languages
     document.getElementById('btnTranslateSelected')?.addEventListener('click', async () => {
         const checked = getCheckedItems();
         if (!checked.length) return;
 
+        const checkedLangs = Array.from(document.querySelectorAll('.lang-translate-check:checked'))
+            .map(cb => cb.dataset.locale);
+
+        if (!checkedLangs.length) {
+            showToast('Bitte mindestens eine Sprache auswählen.', 'bg-warning');
+            return;
+        }
+
         const btn = document.getElementById('btnTranslateSelected');
         btn.disabled = true;
-        btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Übersetze...';
+        const total = checkedLangs.length;
+        let step = 0;
 
         try {
-            const res = await fetch(TRANSLATE_URL, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': CSRF },
-                body: JSON.stringify({
-                    items: checked,
-                    source_lang: SOURCE_LANG,
-                    target_lang: TARGET_LANG,
-                }),
-            });
-            const data = await res.json();
+            for (const lang of checkedLangs) {
+                step++;
+                btn.innerHTML = `<span class="spinner-border spinner-border-sm"></span> ${lang.toUpperCase()} (${step}/${total})…`;
 
-            if (data.error) throw new Error(data.error);
+                const res = await fetch(TRANSLATE_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': CSRF },
+                    body: JSON.stringify({ items: checked, source_lang: SOURCE_LANG, target_lang: lang }),
+                });
+                const data = await res.json();
+                if (data.error) throw new Error(data.error);
 
-            // Fill in translated texts
-            data.translations?.forEach(t => {
-                const idx = checked.findIndex(c => c.type === t.type && c.id === t.id && c.field === t.field);
-                if (idx !== -1) {
-                    const cbIdx = document.querySelectorAll('.item-checkbox:checked')[idx]?.dataset.index;
-                    const textarea = document.querySelector(`.translation-input[data-index="${cbIdx}"]`);
-                    if (textarea) { textarea.value = t.text; autoResize(textarea); }
+                if (lang === TARGET_LANG) {
+                    // Fill textareas for the currently displayed language
+                    data.translations?.forEach(t => {
+                        const idx = checked.findIndex(c => c.type === t.type && c.id === t.id && c.field === t.field);
+                        if (idx !== -1) {
+                            const cbIdx = document.querySelectorAll('.item-checkbox:checked')[idx]?.dataset.index;
+                            const textarea = document.querySelector(`.translation-input[data-index="${cbIdx}"]`);
+                            if (textarea) { textarea.value = t.text; autoResize(textarea); }
+                        }
+                    });
+                } else {
+                    // Auto-apply for other languages immediately
+                    if (data.translations?.length) {
+                        const applyItems = data.translations.map(t => ({
+                            type: t.type, id: t.id, field: t.field, text: t.text,
+                        }));
+                        const applyRes = await fetch(APPLY_URL, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': CSRF },
+                            body: JSON.stringify({ items: applyItems, target_lang: lang }),
+                        });
+                        const applyData = await applyRes.json();
+                        if (applyData.error) throw new Error(applyData.error);
+                    }
                 }
-            });
+            }
 
-            showToast(`${data.translations?.length || 0} Felder übersetzt`, 'bg-success');
+            const extraLangs = checkedLangs.filter(l => l !== TARGET_LANG);
+            const msg = extraLangs.length > 0
+                ? `Übersetzt nach ${checkedLangs.map(l => l.toUpperCase()).join(', ')} — ${extraLangs.length} Sprache(n) automatisch gespeichert`
+                : `${checked.length} Felder übersetzt`;
+            showToast(msg, 'bg-success');
         } catch (e) {
             showToast('Fehler: ' + e.message, 'bg-danger');
         } finally {
             btn.disabled = false;
             btn.innerHTML = '<svg class="bi" width="16" height="16" fill="currentColor"><use xlink:href="/img/icons/bootstrap-icons.svg#translate"></use></svg> Mit DeepL übersetzen (<span id="selectedCount">' + document.querySelectorAll('.item-checkbox:checked').length + '</span>)';
+            btn.disabled = document.querySelectorAll('.item-checkbox:checked').length === 0;
         }
     });
 
