@@ -280,6 +280,49 @@ class TranslationCheckController extends Controller
             }
         }
 
+        // UI Strings (lang/*/base.php)
+        if ($typeFilter === 'all' || $typeFilter === 'ui_string') {
+            $uiFiles = ['base'];
+            foreach ($uiFiles as $file) {
+                $sourcePath = lang_path("{$sourceLang}/{$file}.php");
+                $sourceData = file_exists($sourcePath) ? (require $sourcePath) : [];
+
+                // Preload all locale data once
+                $uiLocaleData = [];
+                foreach ($locales as $tLocale) {
+                    if ($tLocale === $sourceLang) continue;
+                    $tPath = lang_path("{$tLocale}/{$file}.php");
+                    $uiLocaleData[$tLocale] = file_exists($tPath) ? (require $tPath) : [];
+                }
+
+                foreach ($sourceData as $key => $sourceVal) {
+                    $allTranslations = [];
+                    foreach ($locales as $tLocale) {
+                        if ($tLocale === $sourceLang) continue;
+                        $allTranslations[$tLocale] = (string) ($uiLocaleData[$tLocale][$key] ?? '');
+                    }
+
+                    $targetVal = $allTranslations[$targetLang] ?? '';
+                    $status    = $this->worstStatus((string) $sourceVal, $allTranslations);
+
+                    $allItems[] = [
+                        'type'        => 'ui_string',
+                        'typeLabel'   => 'UI Strings',
+                        'id'          => 0,
+                        'title'       => "{$file}.php",
+                        'field'       => "{$file}.{$key}",
+                        'fieldLabel'  => $key,
+                        'source'      => (string) $sourceVal,
+                        'target'      => $targetVal,
+                        'status'      => $status,
+                        'statusLabel' => $this->statusLabel($status),
+                        'statusClass' => $this->statusClass($status),
+                        'translations' => $allTranslations,
+                    ];
+                }
+            }
+        }
+
         // Summary counts always from ALL items (independent of status filter)
         $counts = [
             'ok'           => count(array_filter($allItems, fn ($i) => $i['status'] === 'ok')),
@@ -295,6 +338,7 @@ class TranslationCheckController extends Controller
 
         // Available types
         $types = collect($this->registry->all())->map(fn ($m, $k) => ['key' => $k, 'label' => $m['labelDe']])->values()->all();
+        $types[] = ['key' => 'ui_string', 'label' => 'UI Strings'];
 
         $navPages = \App\Models\Page::whereIn('slug', [
             'about', 'services', 'portfolio', 'news', 'contacts', 'imprint', 'privacy-notice', 'terms-of-use',
@@ -341,6 +385,17 @@ class TranslationCheckController extends Controller
         $texts = [];
         $meta = [];
         foreach ($request->items as $i => $item) {
+            // UI strings: read from lang file instead of model
+            if ($item['type'] === 'ui_string') {
+                [$file, $key] = explode('.', $item['field'], 2);
+                $sourcePath = lang_path("{$request->source_lang}/{$file}.php");
+                $sourceData = file_exists($sourcePath) ? (require $sourcePath) : [];
+                $text = (string) ($sourceData[$key] ?? '');
+                $texts[] = ['text' => $text, 'isHtml' => false];
+                $meta[] = $item;
+                continue;
+            }
+
             $model = $this->registry->resolveModel($item['type'], $item['id']);
             if (!$model) continue;
 
@@ -388,9 +443,32 @@ class TranslationCheckController extends Controller
         ]);
 
         try {
+            // Handle UI strings (file writes) separately — no DB transaction
+            $uiUpdates = [];
+            $modelItems = [];
+            foreach ($request->items as $item) {
+                if ($item['type'] === 'ui_string') {
+                    [$file, $key] = explode('.', $item['field'], 2);
+                    $uiUpdates[$request->target_lang][$file][$key] = $item['text'] ?? '';
+                } else {
+                    $modelItems[] = $item;
+                }
+            }
+
+            foreach ($uiUpdates as $locale => $files) {
+                foreach ($files as $file => $updates) {
+                    $path     = lang_path("{$locale}/{$file}.php");
+                    $existing = file_exists($path) ? (require $path) : [];
+                    foreach ($updates as $key => $text) {
+                        $existing[$key] = $text;
+                    }
+                    $this->writeLocaleFile($locale, $file, $existing);
+                }
+            }
+
             DB::beginTransaction();
 
-            foreach ($request->items as $item) {
+            foreach ($modelItems as $item) {
                 $model = $this->registry->resolveModel($item['type'], $item['id']);
                 if (!$model) continue;
 
@@ -423,6 +501,21 @@ class TranslationCheckController extends Controller
             Log::error('[TranslationCheck] Apply failed', ['message' => $e->getMessage()]);
             return response()->json(['error' => $e->getMessage()], 500);
         }
+    }
+
+    /**
+     * Write a locale PHP file back to disk preserving the short array syntax.
+     */
+    private function writeLocaleFile(string $locale, string $file, array $data): void
+    {
+        $lines = ["<?php\n\nreturn [\n"];
+        foreach ($data as $key => $value) {
+            $escapedKey = str_replace("'", "\\'", (string) $key);
+            $escapedVal = str_replace(['\\', "'"], ['\\\\', "\\'"], (string) $value);
+            $lines[] = "    '{$escapedKey}' => '{$escapedVal}',\n";
+        }
+        $lines[] = "];\n";
+        file_put_contents(lang_path("{$locale}/{$file}.php"), implode('', $lines));
     }
 
     /**

@@ -184,4 +184,15 @@ $hdrStyle = function () use (&$sectionIdx): string {
         </a>
     @endif
 
+    {{-- UI Strings (Translations dashboard only) --}}
+    @if($dashboard === 'translations')
+        <div class="{{ $hdrClass }}" style="{{ $hdrStyle() }}">
+            UI Strings
+        </div>
+        <a href="{{ $link('ui_string') }}"
+           class="{{ $cls($isActive('ui_string')) }}">
+            base.php
+        </a>
+    @endif
+
 </div>

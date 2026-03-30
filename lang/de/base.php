@@ -6,6 +6,7 @@ return [
     'portfolio' => 'Portfolio',
     'news' => 'News',
     'contacts' => 'Kontakt',
+    'get_in_touch' => 'Jetzt kontaktieren',
     'contact_us' => 'Schreiben Sie uns',
     'menu' => 'Menü',
     'who_we_are' => 'Wer wir sind',

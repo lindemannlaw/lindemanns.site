@@ -16,7 +16,7 @@
             </ul>
         </nav>
 
-        <button data-fancybox data-src="#contact-modal" type="button" class="btn header-contact-btn">Get in touch</button>
+        <button data-fancybox data-src="#contact-modal" type="button" class="btn header-contact-btn">{{ __('base.get_in_touch') }}</button>
 
         <div class="lang">
             <p>{{ current_locale() }}</p>
