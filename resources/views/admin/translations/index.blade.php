@@ -16,34 +16,145 @@
 @endsection
 
 @section('content')
-    <x-admin.container>
-        <div class="row g-4">
+    @php
+    $localeFlags = [
+        'de' => '🇩🇪', 'fr' => '🇫🇷', 'pl' => '🇵🇱', 'el' => '🇬🇷',
+        'ru' => '🇷🇺', 'ar' => '🇸🇦', 'zh' => '🇨🇳', 'en' => '🇬🇧',
+        'es' => '🇪🇸', 'it' => '🇮🇹', 'pt' => '🇵🇹', 'ja' => '🇯🇵',
+        'ko' => '🇰🇷', 'nl' => '🇳🇱', 'tr' => '🇹🇷',
+    ];
+    $statusConfig = [
+        'all'          => ['label' => 'Alle',            'active' => 'btn-primary',   'inactive' => 'btn-outline-secondary'],
+        'untranslated' => ['label' => 'Nicht übersetzt', 'active' => 'btn-danger',    'inactive' => 'btn-outline-secondary', 'badge' => 'bg-danger',            'badgeText' => 'text-danger'],
+        'inherited'    => ['label' => 'Geerbt',          'active' => 'btn-secondary', 'inactive' => 'btn-outline-secondary', 'badge' => 'bg-secondary',         'badgeText' => 'text-secondary'],
+        'ok'           => ['label' => 'OK',              'active' => 'btn-success',   'inactive' => 'btn-outline-secondary', 'badge' => 'bg-success',           'badgeText' => 'text-success'],
+        'missing'      => ['label' => 'Fehlend',         'active' => 'btn-warning',   'inactive' => 'btn-outline-secondary', 'badge' => 'bg-warning text-dark', 'badgeText' => 'text-warning'],
+    ];
+    @endphp
 
-            {{-- Sidebar nav --}}
+    <x-admin.container>
+        <div class="row g-4 align-items-start">
+
+            {{-- ── Sidebar ───────────────────────────────────────────────────── --}}
             <div class="col-md-3 col-xl-2">
-                @include('admin.partials.content-nav', [
-                    'dashboard'   => 'translations',
-                    'typeFilter'  => $typeFilter,
-                    'idFilter'    => $idFilter,
-                    'navPages'    => $navPages,
-                    'navSections' => $navSections,
-                    'extraParams' => ['lang' => $targetLang, 'status' => $statusFilter],
-                ])
+                <div class="sidebar-filter-col" style="position:sticky; top:64px; max-height:calc(100vh - 80px); overflow-y:auto; padding-right:2px;">
+
+                    {{-- Sprachen --}}
+                    <div class="border rounded mb-2">
+                        <div class="d-flex align-items-center justify-content-between px-3 py-2 user-select-none sidebar-section-toggle"
+                             style="cursor:pointer; background:var(--bs-light); border-radius:inherit;"
+                             data-bs-toggle="collapse" data-bs-target="#sidebarLangs" aria-expanded="true">
+                            <span class="text-uppercase fw-semibold text-muted" style="font-size:.7rem;letter-spacing:.05em;">Sprachen</span>
+                            <svg class="bi sidebar-chevron" width="11" height="11" fill="currentColor" style="transition:transform .2s;flex-shrink:0;"><use xlink:href="/img/icons/bootstrap-icons.svg#chevron-up"/></svg>
+                        </div>
+                        <div class="collapse show" id="sidebarLangs">
+                            <div class="px-2 py-2">
+                                <div class="d-flex justify-content-between align-items-center mb-1 px-1" style="font-size:.8rem;">
+                                    <span class="text-muted">Für DeepL:</span>
+                                    <div class="d-flex gap-2">
+                                        <a href="#" class="text-primary text-decoration-none" id="selectAllLangs">Alle</a>
+                                        <span class="text-muted">/</span>
+                                        <a href="#" class="text-secondary text-decoration-none" id="deselectAllLangs">Keine</a>
+                                    </div>
+                                </div>
+                                @foreach($locales as $locale)
+                                    @if($locale !== $sourceLang)
+                                        @php $isPublished = $langSettings[$locale] ?? true; @endphp
+                                        <div class="d-flex align-items-center py-1 px-1 gap-2 rounded {{ $targetLang === $locale ? 'bg-primary bg-opacity-10' : '' }}"
+                                             style="font-size:.85rem;">
+                                            <input type="checkbox"
+                                                   class="form-check-input flex-shrink-0 lang-translate-check"
+                                                   id="lang-check-{{ $locale }}"
+                                                   data-locale="{{ $locale }}"
+                                                   style="cursor:pointer;margin-top:0;"
+                                                   {{ $targetLang === $locale ? 'checked' : '' }}>
+                                            <a class="flex-grow-1 text-decoration-none {{ $targetLang === $locale ? 'fw-semibold text-primary' : 'text-body' }}"
+                                               href="{{ route('admin.translations.index', array_merge(request()->only(['type', 'status', 'id']), ['lang' => $locale])) }}">
+                                                {{ $localeFlags[$locale] ?? '' }} {{ strtoupper($locale) }}
+                                            </a>
+                                            <button type="button"
+                                                    class="btn btn-sm p-0 border-0 bg-transparent lang-publish-toggle flex-shrink-0"
+                                                    data-locale="{{ $locale }}"
+                                                    data-published="{{ $isPublished ? '1' : '0' }}"
+                                                    title="{{ $isPublished ? 'Live – klicken für Draft' : 'Draft – klicken für Live' }}">
+                                                <span class="badge {{ $isPublished ? 'bg-success' : 'bg-secondary' }}" style="font-size:.65em;cursor:pointer;">
+                                                    {{ $isPublished ? 'Live' : 'Draft' }}
+                                                </span>
+                                            </button>
+                                        </div>
+                                    @endif
+                                @endforeach
+                            </div>
+                        </div>
+                    </div>
+
+                    {{-- Status --}}
+                    <div class="border rounded mb-2">
+                        <div class="d-flex align-items-center justify-content-between px-3 py-2 user-select-none sidebar-section-toggle"
+                             style="cursor:pointer; background:var(--bs-light);"
+                             data-bs-toggle="collapse" data-bs-target="#sidebarStatus" aria-expanded="true">
+                            <span class="text-uppercase fw-semibold text-muted" style="font-size:.7rem;letter-spacing:.05em;">Status</span>
+                            <svg class="bi sidebar-chevron" width="11" height="11" fill="currentColor" style="transition:transform .2s;flex-shrink:0;"><use xlink:href="/img/icons/bootstrap-icons.svg#chevron-up"/></svg>
+                        </div>
+                        <div class="collapse show" id="sidebarStatus">
+                            <div class="d-flex flex-column gap-1 px-2 py-2">
+                                @foreach($statusConfig as $key => $cfg)
+                                    <a href="{{ route('admin.translations.index', array_merge(request()->only(['type', 'lang', 'id']), ['status' => $key])) }}"
+                                       class="btn btn-sm text-start {{ $statusFilter === $key ? $cfg['active'] : $cfg['inactive'] }}">
+                                        {{ $cfg['label'] }}
+                                        @if($key !== 'all' && isset($counts[$key]))
+                                            @if($counts[$key] === 0)
+                                                <span class="ms-1 {{ $cfg['badgeText'] ?? '' }}" style="font-size:.75em;font-weight:600;">0</span>
+                                            @else
+                                                <span class="badge {{ $cfg['badge'] ?? 'bg-secondary' }} ms-1">{{ $counts[$key] }}</span>
+                                            @endif
+                                        @endif
+                                    </a>
+                                @endforeach
+                            </div>
+                        </div>
+                    </div>
+
+                    {{-- Inhalt --}}
+                    <div class="mb-2">
+                        <div class="d-flex align-items-center justify-content-between px-3 py-2 user-select-none border rounded sidebar-section-toggle"
+                             style="cursor:pointer; background:var(--bs-light);"
+                             data-bs-toggle="collapse" data-bs-target="#sidebarContent" aria-expanded="true">
+                            <span class="text-uppercase fw-semibold text-muted" style="font-size:.7rem;letter-spacing:.05em;">Inhalt</span>
+                            <svg class="bi sidebar-chevron" width="11" height="11" fill="currentColor" style="transition:transform .2s;flex-shrink:0;"><use xlink:href="/img/icons/bootstrap-icons.svg#chevron-up"/></svg>
+                        </div>
+                        <div class="collapse show pt-2" id="sidebarContent">
+                            @include('admin.partials.content-nav', [
+                                'dashboard'   => 'translations',
+                                'typeFilter'  => $typeFilter,
+                                'idFilter'    => $idFilter,
+                                'navPages'    => $navPages,
+                                'navSections' => $navSections,
+                                'extraParams' => ['lang' => $targetLang, 'status' => $statusFilter],
+                            ])
+                        </div>
+                    </div>
+
+                </div>
             </div>
 
-            {{-- Main content --}}
+            {{-- ── Main content ───────────────────────────────────────────────── --}}
             <div class="col-md-9 col-xl-10">
 
-                {{-- Filters row --}}
-                <div class="d-flex gap-3 mb-4 flex-wrap align-items-center">
+                {{-- Sticky sub-header: select-all checkbox + record sub-filter --}}
+                <div class="d-flex align-items-center gap-3 mb-3 bg-white py-2 border-bottom"
+                     style="position:sticky; top:0; z-index:5;">
+                    <div class="form-check mb-0">
+                        <input class="form-check-input" type="checkbox" id="selectAll">
+                        <label class="form-check-label small" for="selectAll">Alle auswählen</label>
+                    </div>
 
-                    {{-- Record sub-filter (only when a specific type is selected) --}}
                     @if($typeFilter !== 'all' && count($typeRecords) > 0)
                         <form method="GET" action="{{ route('admin.translations.index') }}" class="d-flex gap-2 align-items-center">
                             <input type="hidden" name="type" value="{{ $typeFilter }}">
                             <input type="hidden" name="lang" value="{{ $targetLang }}">
                             <input type="hidden" name="status" value="{{ $statusFilter }}">
-                            <select name="id" class="form-select form-select-sm" style="width: auto; max-width: 240px;" onchange="this.form.submit()">
+                            <select name="id" class="form-select form-select-sm" style="width:auto;max-width:240px;" onchange="this.form.submit()">
                                 <option value="">— Alle {{ collect($types)->firstWhere('key', $typeFilter)['label'] ?? '' }} —</option>
                                 @foreach($typeRecords as $rec)
                                     <option value="{{ $rec['id'] }}" {{ (string)$idFilter === (string)$rec['id'] ? 'selected' : '' }}>
@@ -53,101 +164,6 @@
                             </select>
                         </form>
                     @endif
-
-                    {{-- Target language --}}
-                    @php
-                        $localeFlags = [
-                            'de' => '🇩🇪', 'fr' => '🇫🇷', 'pl' => '🇵🇱', 'el' => '🇬🇷',
-                            'ru' => '🇷🇺', 'ar' => '🇸🇦', 'zh' => '🇨🇳', 'en' => '🇬🇧',
-                            'es' => '🇪🇸', 'it' => '🇮🇹', 'pt' => '🇵🇹', 'ja' => '🇯🇵',
-                            'ko' => '🇰🇷', 'nl' => '🇳🇱', 'tr' => '🇹🇷',
-                        ];
-                    @endphp
-                    <div class="dropdown">
-                        <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button"
-                                data-bs-toggle="dropdown" data-bs-auto-close="outside" id="langDropdownBtn">
-                            {{ $localeFlags[$targetLang] ?? '' }} {{ strtoupper($targetLang) }}
-                            @if(isset($langSettings[$targetLang]))
-                                <span class="badge ms-1 {{ $langSettings[$targetLang] ? 'bg-success' : 'bg-secondary' }}" style="font-size:.65em;">
-                                    {{ $langSettings[$targetLang] ? 'Live' : 'Draft' }}
-                                </span>
-                            @endif
-                            <span id="extraLangsIndicator" class="badge bg-primary ms-1" style="display:none; font-size:.65em;"></span>
-                        </button>
-                        <ul class="dropdown-menu pt-1 pb-1" style="min-width: 210px;">
-                            {{-- Select all / none --}}
-                            <li class="d-flex justify-content-between align-items-center px-3 py-1">
-                                <small class="text-muted">Für DeepL:</small>
-                                <div class="d-flex gap-2">
-                                    <a href="#" class="small text-primary text-decoration-none" id="selectAllLangs">Alle</a>
-                                    <span class="text-muted small">/</span>
-                                    <a href="#" class="small text-secondary text-decoration-none" id="deselectAllLangs">Keine</a>
-                                </div>
-                            </li>
-                            <li><hr class="dropdown-divider my-1"></li>
-                            @foreach($locales as $locale)
-                                @if($locale !== $sourceLang)
-                                    @php $isPublished = $langSettings[$locale] ?? true; @endphp
-                                    <li class="d-flex align-items-center px-2 py-1 gap-2 {{ $targetLang === $locale ? 'bg-light rounded mx-1' : '' }}">
-                                        <input type="checkbox"
-                                               class="form-check-input flex-shrink-0 lang-translate-check"
-                                               id="lang-check-{{ $locale }}"
-                                               data-locale="{{ $locale }}"
-                                               style="cursor:pointer; margin-top:0;"
-                                               {{ $targetLang === $locale ? 'checked' : '' }}>
-                                        <a class="dropdown-item flex-grow-1 py-0 px-1 {{ $targetLang === $locale ? 'fw-semibold' : '' }}"
-                                           href="{{ route('admin.translations.index', array_merge(request()->only(['type', 'status', 'id']), ['lang' => $locale])) }}">
-                                            {{ $localeFlags[$locale] ?? '' }} {{ strtoupper($locale) }}
-                                        </a>
-                                        <button type="button"
-                                            class="btn btn-sm p-0 border-0 bg-transparent lang-publish-toggle flex-shrink-0"
-                                            data-locale="{{ $locale }}"
-                                            data-published="{{ $isPublished ? '1' : '0' }}"
-                                            title="{{ $isPublished ? 'Live – klicken für Draft' : 'Draft – klicken für Live' }}">
-                                            <span class="badge {{ $isPublished ? 'bg-success' : 'bg-secondary' }}" style="font-size:.7em; cursor:pointer;">
-                                                {{ $isPublished ? 'Live' : 'Draft' }}
-                                            </span>
-                                        </button>
-                                    </li>
-                                @endif
-                            @endforeach
-                        </ul>
-                    </div>
-                    <input type="hidden" name="lang" value="{{ $targetLang }}">
-
-                    {{-- Status filter --}}
-                    @php
-                    $statusConfig = [
-                        'all'          => ['label' => 'Alle',             'active' => 'btn-primary',   'inactive' => 'btn-outline-secondary', 'badge' => 'bg-secondary',         'badgeText' => 'text-secondary'],
-                        'untranslated' => ['label' => 'Nicht übersetzt',  'active' => 'btn-danger',    'inactive' => 'btn-outline-secondary', 'badge' => 'bg-danger',            'badgeText' => 'text-danger'],
-                        'inherited'    => ['label' => 'Geerbt',           'active' => 'btn-secondary', 'inactive' => 'btn-outline-secondary', 'badge' => 'bg-secondary',         'badgeText' => 'text-secondary'],
-                        'ok'           => ['label' => 'OK',               'active' => 'btn-success',   'inactive' => 'btn-outline-secondary', 'badge' => 'bg-success',           'badgeText' => 'text-success'],
-                        'missing'      => ['label' => 'Fehlend',          'active' => 'btn-warning',   'inactive' => 'btn-outline-secondary', 'badge' => 'bg-warning text-dark', 'badgeText' => 'text-warning'],
-                    ];
-                    @endphp
-                    <div class="btn-group btn-group-sm">
-                        @foreach($statusConfig as $key => $cfg)
-                            <a href="{{ route('admin.translations.index', array_merge(request()->only(['type', 'lang', 'id']), ['status' => $key])) }}"
-                               class="btn {{ $statusFilter === $key ? $cfg['active'] : $cfg['inactive'] }}">
-                                {{ $cfg['label'] }}
-                                @if($key !== 'all' && isset($counts[$key]))
-                                    @if($counts[$key] === 0)
-                                        <span class="ms-1 {{ $cfg['badgeText'] }}" style="font-size:.75em; font-weight:600;">0</span>
-                                    @else
-                                        <span class="badge {{ $cfg['badge'] }} ms-1">{{ $counts[$key] }}</span>
-                                    @endif
-                                @endif
-                            </a>
-                        @endforeach
-                    </div>
-                </div>
-
-                {{-- Select all --}}
-                <div class="mb-3">
-                    <div class="form-check">
-                        <input class="form-check-input" type="checkbox" id="selectAll">
-                        <label class="form-check-label small" for="selectAll">Alle auswählen</label>
-                    </div>
                 </div>
 
                 {{-- Items --}}
@@ -239,6 +255,16 @@ document.addEventListener('DOMContentLoaded', function () {
     const LOCALE_FLAGS   = @json($localeFlags);
     const ITEMS          = @json($items);
 
+    // ── Sidebar collapse chevron rotation ─────────────────────────────────
+    document.querySelectorAll('.sidebar-section-toggle').forEach(toggle => {
+        const targetId = toggle.dataset.bsTarget;
+        const targetEl = document.querySelector(targetId);
+        const chevron  = toggle.querySelector('.sidebar-chevron');
+        if (!targetEl || !chevron) return;
+        targetEl.addEventListener('hide.bs.collapse', () => chevron.style.transform = 'rotate(-90deg)');
+        targetEl.addEventListener('show.bs.collapse', () => chevron.style.transform = 'rotate(0deg)');
+    });
+
     // ── Helpers ───────────────────────────────────────────────────────────
     function autoResize(ta) {
         ta.style.height = 'auto';
@@ -294,7 +320,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     function updateColumns() {
         const langs = getCheckedLangs();
-        const total = 1 + langs.length; // 1 for source
+        const total = 1 + langs.length;
         const cc = colClass(total);
 
         document.querySelectorAll('.translation-row').forEach(row => {
@@ -303,19 +329,14 @@ document.addEventListener('DOMContentLoaded', function () {
             const item = ITEMS[idx];
             if (!srcCol || !item) return;
 
-            // Preserve any edited values
             const currentVals = {};
             row.querySelectorAll('.translation-input').forEach(ta => {
                 currentVals[ta.dataset.lang] = ta.value;
             });
 
-            // Update source column width
             srcCol.className = 'col-source ' + cc;
-
-            // Remove old translation cols
             row.querySelectorAll('.translation-col').forEach(el => el.remove());
 
-            // Add one column per lang
             langs.forEach(lang => {
                 const val = currentVals[lang] ?? item.translations?.[lang] ?? '';
                 const div = document.createElement('div');
@@ -332,11 +353,9 @@ document.addEventListener('DOMContentLoaded', function () {
             });
         });
 
-        // Auto-resize source textareas
         document.querySelectorAll('.source-input').forEach(ta => autoResize(ta));
     }
 
-    // Initial render
     updateColumns();
 
     // ── Source textarea auto-resize + save button ────────────────────────
@@ -406,33 +425,16 @@ document.addEventListener('DOMContentLoaded', function () {
     document.getElementById('selectAllLangs')?.addEventListener('click', (e) => {
         e.preventDefault();
         document.querySelectorAll('.lang-translate-check').forEach(cb => cb.checked = true);
-        updateExtraLangsIndicator();
         updateColumns();
     });
     document.getElementById('deselectAllLangs')?.addEventListener('click', (e) => {
         e.preventDefault();
         document.querySelectorAll('.lang-translate-check').forEach(cb => cb.checked = false);
-        updateExtraLangsIndicator();
         updateColumns();
     });
     document.querySelectorAll('.lang-translate-check').forEach(cb => {
-        cb.addEventListener('change', () => {
-            updateExtraLangsIndicator();
-            updateColumns();
-        });
+        cb.addEventListener('change', () => updateColumns());
     });
-
-    function updateExtraLangsIndicator() {
-        const extra = Array.from(document.querySelectorAll('.lang-translate-check:checked'))
-            .filter(cb => cb.dataset.locale !== TARGET_LANG);
-        const indicator = document.getElementById('extraLangsIndicator');
-        if (extra.length > 0) {
-            indicator.textContent = '+' + extra.length;
-            indicator.style.display = '';
-        } else {
-            indicator.style.display = 'none';
-        }
-    }
 
     // ── Translate selected (multi-lang) ───────────────────────────────────
     document.getElementById('btnTranslateSelected')?.addEventListener('click', async () => {
@@ -457,14 +459,12 @@ document.addEventListener('DOMContentLoaded', function () {
                 const data = await res.json();
                 if (data.error) throw new Error(data.error);
 
-                // Fill textareas for this lang
                 data.translations?.forEach(t => {
                     const ci = checked.findIndex(c => c.type===t.type && c.id===t.id && c.field===t.field);
                     if (ci !== -1) {
                         const cbIdx = document.querySelectorAll('.item-checkbox:checked')[ci]?.dataset.index;
                         const ta = document.querySelector(`.translation-input[data-index="${cbIdx}"][data-lang="${lang}"]`);
                         if (ta) { ta.value = t.text; autoResize(ta); }
-                        // Also update ITEMS cache
                         if (cbIdx !== undefined && ITEMS[cbIdx]) {
                             if (!ITEMS[cbIdx].translations) ITEMS[cbIdx].translations = {};
                             ITEMS[cbIdx].translations[lang] = t.text;
@@ -524,7 +524,6 @@ document.addEventListener('DOMContentLoaded', function () {
         btn.disabled = true;
         btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Speichere...';
 
-        // Group items by language
         const byLang = {};
         document.querySelectorAll('.item-checkbox:checked').forEach(cb => {
             const idx = cb.dataset.index;
@@ -561,11 +560,11 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 
     // ── Language publish/draft toggles ────────────────────────────────────
-    const TOGGLE_BASE     = @json(route('admin.language-settings.toggle', ['locale' => '__LOCALE__']));
-    const langModal       = new bootstrap.Modal(document.getElementById('langPublishModal'));
-    const langModalText   = document.getElementById('langPublishModalText');
-    const langModalConfirm= document.getElementById('langPublishModalConfirm');
-    let pendingToggleBtn  = null;
+    const TOGGLE_BASE      = @json(route('admin.language-settings.toggle', ['locale' => '__LOCALE__']));
+    const langModal        = new bootstrap.Modal(document.getElementById('langPublishModal'));
+    const langModalText    = document.getElementById('langPublishModalText');
+    const langModalConfirm = document.getElementById('langPublishModalConfirm');
+    let pendingToggleBtn   = null;
 
     document.querySelectorAll('.lang-publish-toggle').forEach(btn => {
         btn.addEventListener('click', (e) => {
@@ -606,12 +605,6 @@ document.addEventListener('DOMContentLoaded', function () {
             badge.textContent = isPublished ? 'Live' : 'Draft';
             badge.className = 'badge ' + (isPublished ? 'bg-success' : 'bg-secondary');
             btn.title = isPublished ? 'Live – klicken für Draft' : 'Draft – klicken für Live';
-
-            const dropBtnBadge = btn.closest('.dropdown')?.querySelector('.dropdown-toggle .badge');
-            if (dropBtnBadge && locale === TARGET_LANG) {
-                dropBtnBadge.textContent = isPublished ? 'Live' : 'Draft';
-                dropBtnBadge.className = 'badge ms-1 ' + (isPublished ? 'bg-success' : 'bg-secondary');
-            }
             showToast(`${locale.toUpperCase()} ist jetzt ${isPublished ? 'Live' : 'Draft'}`, isPublished ? 'bg-success' : 'bg-secondary');
         } catch (e) {
             showToast('Fehler: ' + e.message, 'bg-danger');
