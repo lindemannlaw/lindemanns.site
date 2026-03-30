@@ -39,15 +39,30 @@
                 </a>
                 <a href="{{ route('admin.seo-geo.index', ['type' => $typeFilter, 'status' => 'empty']) }}"
                    class="btn {{ $statusFilter === 'empty' ? 'btn-danger' : 'btn-outline-secondary' }}">
-                    Leer <span class="badge bg-danger ms-1">{{ $empty }}</span>
+                    Leer
+                    @if($empty === 0)
+                        <span class="ms-1 text-danger" style="font-size:.75em; font-weight:600;">0</span>
+                    @else
+                        <span class="badge bg-danger ms-1">{{ $empty }}</span>
+                    @endif
                 </a>
                 <a href="{{ route('admin.seo-geo.index', ['type' => $typeFilter, 'status' => 'partial']) }}"
                    class="btn {{ $statusFilter === 'partial' ? 'btn-warning' : 'btn-outline-secondary' }}">
-                    Teilweise <span class="badge bg-warning text-dark ms-1">{{ $partial }}</span>
+                    Teilweise
+                    @if($partial === 0)
+                        <span class="ms-1 text-warning" style="font-size:.75em; font-weight:600;">0</span>
+                    @else
+                        <span class="badge bg-warning text-dark ms-1">{{ $partial }}</span>
+                    @endif
                 </a>
                 <a href="{{ route('admin.seo-geo.index', ['type' => $typeFilter, 'status' => 'complete']) }}"
                    class="btn {{ $statusFilter === 'complete' ? 'btn-success' : 'btn-outline-secondary' }}">
-                    Vollständig <span class="badge bg-success ms-1">{{ $complete }}</span>
+                    Vollständig
+                    @if($complete === 0)
+                        <span class="ms-1 text-success" style="font-size:.75em; font-weight:600;">0</span>
+                    @else
+                        <span class="badge bg-success ms-1">{{ $complete }}</span>
+                    @endif
                 </a>
             </div>
         </form>
