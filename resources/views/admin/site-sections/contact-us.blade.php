@@ -58,6 +58,14 @@
                     :placeholder="__('admin.description')"
                 />
 
+                <!-- address (EN only – used in footer) -->
+                <x-admin.field.text
+                    :name="'content_data['. $lang .'][address]'"
+                    :value="old('content_data.' . $lang . '.address', data_get($section->getTranslation('content_data', $lang, false), 'address'))"
+                    :placeholder="__('admin.address')"
+                    :required="false"
+                />
+
                 <x-admin.dynamic-fields.wrapper>
                     @foreach(data_get($section->getTranslation('content_data', config('app.fallback_locale')), 'phones', []) as $phone)
                         <x-admin.dynamic-fields.group>
