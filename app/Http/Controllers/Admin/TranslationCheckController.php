@@ -632,6 +632,9 @@ class TranslationCheckController extends Controller
                     foreach ($block['items'] ?? [] as $itemIdx => $item) {
                         $ip  = "{$prefix}.items.{$itemIdx}";
                         $num = $itemIdx + 1;
+                        if (!empty($item['number'])) {
+                            $paths[] = ["{$ip}.number",  "Block {$bNum} – Zahl {$num} Wert"];
+                        }
                         if (!empty($item['subline'])) {
                             $paths[] = ["{$ip}.subline", "Block {$bNum} – Zahl {$num} Subline"];
                         }

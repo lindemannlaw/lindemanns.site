@@ -90,6 +90,20 @@ class ProjectController extends Controller
         }
 
         if ($request->ajax()) {
+            $sourceLang   = config('app.fallback_locale', 'en');
+            $enBlocks     = $project->getTranslation('description_blocks', $sourceLang, false) ?? [];
+            $blockFields  = $this->extractDescriptionBlockFields(is_array($enBlocks) ? $enBlocks : []);
+
+            $contentFields = array_merge(
+                [
+                    'title', 'short_description', 'description', 'location',
+                    'property_details.property_type',
+                    'property_details.status',
+                    'property_details.inquiry_button_text',
+                ],
+                $blockFields
+            );
+
             return response()->json([
                 'toast' => [
                     'type'    => 'success',
@@ -98,12 +112,7 @@ class ProjectController extends Controller
                 'html'          => $this->getViewProjects(),
                 'autoTranslate' => $this->buildAutoTranslatePayload(
                     $project, 'project',
-                    [
-                        'title', 'short_description', 'description', 'location',
-                        'property_details.property_type',
-                        'property_details.status',
-                        'property_details.inquiry_button_text',
-                    ],
+                    $contentFields,
                     true,
                     'admin.portfolio.project.edit', [$project]
                 ),
@@ -256,12 +265,19 @@ class ProjectController extends Controller
 
         if ($request->ajax()) {
             $project->refresh();
-            $allContentFields = [
-                'title', 'short_description', 'description', 'location',
-                'property_details.property_type',
-                'property_details.status',
-                'property_details.inquiry_button_text',
-            ];
+            $sourceLang  = config('app.fallback_locale', 'en');
+            $enBlocks    = $project->getTranslation('description_blocks', $sourceLang, false) ?? [];
+            $blockFields = $this->extractDescriptionBlockFields(is_array($enBlocks) ? $enBlocks : []);
+
+            $allContentFields = array_merge(
+                [
+                    'title', 'short_description', 'description', 'location',
+                    'property_details.property_type',
+                    'property_details.status',
+                    'property_details.inquiry_button_text',
+                ],
+                $blockFields
+            );
             $payload = $this->buildAutoTranslateUpdatePayload(
                 $project, $oldTexts, 'project', $allContentFields, true,
                 'admin.portfolio.project.edit', [$project]
@@ -686,10 +702,14 @@ class ProjectController extends Controller
 
         // Text-only fields per block type — preserved from target language
         // Item-level text fields (inside items array)
+        // NOTE: 'number' is intentionally excluded from 'numbers' — it is a
+        // layout value (e.g. "42", "3.5 Mrd.") that must be identical across
+        // all locales.  Keeping it out of the text-field list means the
+        // structural sync preserves the EN value instead of clearing it to ''.
         $itemTextFields = [
             'text_column_row'  => ['headline', 'content', 'link_text', 'link_url'],
             'floating_gallery' => ['headline', 'subhead'],
-            'numbers'          => ['title', 'number', 'subline'],
+            'numbers'          => ['title', 'subline'],
         ];
         // Block-level text fields (on the block itself, not inside items)
         $blockTextFields = [

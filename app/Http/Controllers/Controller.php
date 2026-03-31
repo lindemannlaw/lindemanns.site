@@ -138,6 +138,70 @@ abstract class Controller
     }
 
     /**
+     * Extract all translatable text field dot-paths from a description_blocks
+     * array (EN source locale).  Returns paths in the form
+     * "description_blocks.{blockIndex}.{fieldPath}" ready to be appended to the
+     * contentFields list sent to the auto-translate wizard.
+     *
+     * Mirrors TranslationCheckController::extractBlockTextPaths() but returns
+     * plain field strings (no labels) and includes the parent field prefix.
+     */
+    protected function extractDescriptionBlockFields(array $blocks): array
+    {
+        $fields = [];
+
+        foreach ($blocks as $blockIdx => $block) {
+            $type   = $block['type'] ?? '';
+            $prefix = "description_blocks.{$blockIdx}";
+
+            switch ($type) {
+                case 'text':
+                    if (!empty($block['content'])) {
+                        $fields[] = "{$prefix}.content";
+                    }
+                    break;
+
+                case 'text_column_row':
+                    foreach ($block['items'] ?? [] as $itemIdx => $item) {
+                        $ip = "{$prefix}.items.{$itemIdx}";
+                        if (!empty($item['headline']))  $fields[] = "{$ip}.headline";
+                        if (!empty($item['subhead']))   $fields[] = "{$ip}.subhead";
+                        if (!empty($item['content']))   $fields[] = "{$ip}.content";
+                        if (!empty($item['link_text'])) $fields[] = "{$ip}.link_text";
+                    }
+                    break;
+
+                case 'floating_gallery':
+                    foreach ($block['items'] ?? [] as $itemIdx => $item) {
+                        $ip = "{$prefix}.items.{$itemIdx}";
+                        if (!empty($item['headline'])) $fields[] = "{$ip}.headline";
+                        if (!empty($item['subhead']))  $fields[] = "{$ip}.subhead";
+                    }
+                    break;
+
+                case 'numbers':
+                    if (!empty($block['headline'])) $fields[] = "{$prefix}.headline";
+                    foreach ($block['items'] ?? [] as $itemIdx => $item) {
+                        $ip = "{$prefix}.items.{$itemIdx}";
+                        if (!empty($item['subline'])) $fields[] = "{$ip}.subline";
+                        if (!empty($item['title']))   $fields[] = "{$ip}.title";
+                        // 'number' is intentionally excluded — it is a layout
+                        // value (e.g. "42") preserved via structural sync, not
+                        // translated.
+                    }
+                    break;
+
+                case 'video':
+                    if (!empty($block['headline'])) $fields[] = "{$prefix}.headline";
+                    if (!empty($block['content']))  $fields[] = "{$prefix}.content";
+                    break;
+            }
+        }
+
+        return $fields;
+    }
+
+    /**
      * Read a single field value (supports dot-notation for JSON sub-keys).
      */
     private function getFieldSourceValue(\Illuminate\Database\Eloquent\Model $model, string $field, string $lang): string
