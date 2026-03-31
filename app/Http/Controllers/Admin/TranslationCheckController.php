@@ -468,9 +468,19 @@ class TranslationCheckController extends Controller
 
             DB::beginTransaction();
 
+            // Cache model instances so multiple sub-fields on the same record accumulate
+            // in memory correctly before a single save — prevents each resolveModel() call
+            // from returning a stale DB snapshot and re-initialising the translation array.
+            $modelCache = [];
+
             foreach ($modelItems as $item) {
-                $model = $this->registry->resolveModel($item['type'], $item['id']);
-                if (!$model) continue;
+                $cacheKey = $item['type'] . ':' . $item['id'];
+                if (!isset($modelCache[$cacheKey])) {
+                    $m = $this->registry->resolveModel($item['type'], $item['id']);
+                    if (!$m) continue;
+                    $modelCache[$cacheKey] = $m;
+                }
+                $model = $modelCache[$cacheKey];
 
                 // Support dot-notation for sub-fields (e.g. property_details.property_type, description_blocks.0.content)
                 if (str_contains($item['field'], '.')) {
@@ -491,6 +501,11 @@ class TranslationCheckController extends Controller
                 } else {
                     $model->setTranslation($item['field'], $request->target_lang, $item['text'] ?? '');
                 }
+                // Do NOT save inside the loop — accumulate all changes in memory first.
+            }
+
+            // Single save per model, containing all accumulated changes.
+            foreach ($modelCache as $model) {
                 $model->save();
             }
 

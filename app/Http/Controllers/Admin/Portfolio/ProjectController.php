@@ -713,11 +713,10 @@ class ProjectController extends Controller
                 $otherType   = $otherBlock['type'] ?? null;
 
                 if ($primaryType === 'text') {
+                    // Preserve existing translation; do NOT fall back to EN source.
                     $synced[] = [
                         'type'    => 'text',
-                        'content' => ($otherType === 'text')
-                            ? ($otherBlock['content'] ?? '')
-                            : ($primaryBlock['content'] ?? ''),
+                        'content' => ($otherType === 'text') ? ($otherBlock['content'] ?? '') : '',
                     ];
                     continue;
                 }
@@ -732,13 +731,19 @@ class ProjectController extends Controller
                                 $merged[$field] = $otherBlock[$field];
                             }
                         }
+                    } else {
+                        // No matching block in this locale — clear text fields instead of
+                        // inheriting EN source text (would show as "Geerbt" without translation).
+                        foreach ($blockTextFields[$primaryType] ?? [] as $field) {
+                            $merged[$field] = '';
+                        }
                     }
                     $synced[] = $merged;
                     continue;
                 }
 
                 // For structured blocks (text_column_row, floating_gallery, numbers)
-                // copy all layout from primary; overlay text fields from other
+                // copy all layout from primary; overlay text fields from other.
                 $merged = $primaryBlock;
 
                 // Block-level text fields (e.g. numbers.headline)
@@ -748,19 +753,27 @@ class ProjectController extends Controller
                             $merged[$field] = $otherBlock[$field];
                         }
                     }
+                } else {
+                    // No matching block — clear text fields so they appear as "Nicht übersetzt".
+                    foreach ($blockTextFields[$primaryType] ?? [] as $field) {
+                        $merged[$field] = '';
+                    }
                 }
 
                 // Item-level text fields
-                $otherItems   = ($otherType === $primaryType) ? ($otherBlock['items'] ?? []) : [];
-                $syncedItems  = [];
+                $otherItems  = ($otherType === $primaryType) ? ($otherBlock['items'] ?? []) : [];
+                $syncedItems = [];
 
                 foreach ($primaryBlock['items'] ?? [] as $itemIndex => $primaryItem) {
-                    $otherItem  = $otherItems[$itemIndex] ?? [];
-                    $mergedItem = $primaryItem; // start with primary (all layout)
+                    $otherItem  = $otherItems[$itemIndex] ?? null;
+                    $mergedItem = $primaryItem; // start with primary layout
 
                     foreach ($itemTextFields[$primaryType] ?? [] as $field) {
-                        if (array_key_exists($field, $otherItem)) {
+                        if ($otherItem !== null && array_key_exists($field, $otherItem)) {
                             $mergedItem[$field] = $otherItem[$field];
+                        } else {
+                            // No other-locale item — clear text field.
+                            $mergedItem[$field] = '';
                         }
                     }
 
